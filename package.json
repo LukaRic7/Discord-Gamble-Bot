@@ -1,0 +1,16 @@
+{
+  "name": "gamble-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "discord.js": "^14.26.4",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
+  }
+}
