@@ -27,9 +27,90 @@ class DatabaseManager {
             filename: this.dbFilePath,
             driver: sqlite3.Database
         });
-
+    
         await this.db.exec('PRAGMA foreign_keys = ON;');
-
+    
+        await this.db.exec(`
+            CREATE TABLE IF NOT EXISTS player_profiles (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                balance            BIGINT       DEFAULT 0,
+                total_waged        BIGINT       DEFAULT 0,
+                lifetime_profit    BIGINT       DEFAULT 0,
+                daily_streak       INT          DEFAULT 0,
+                last_daily_claim   TIMESTAMP    NULL,
+                total_games_played INT          DEFAULT 0,
+                created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                total_payed        BIGINT       DEFAULT 0,
+                total_received     BIGINT       DEFAULT 0
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_slots (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                jackpots_hit       INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_mines (
+                user_id       VARCHAR (25) PRIMARY KEY,
+                bombs_hit     INT          DEFAULT 0,
+                diamonds_hit  INT          DEFAULT 0,
+                perfect_games INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_highlow (
+                user_id        VARCHAR (25) PRIMARY KEY,
+                longest_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_crash (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                highest_multiplier DECIMAL (10, 2) DEFAULT 0.0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_coinflip (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                longest_win_streak INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_chests (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                total_opened       INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+    
+            CREATE TABLE IF NOT EXISTS game_blackjack (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                total_hands        INT          DEFAULT 0,
+                natural_blackjacks INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profiles (user_id)
+                    ON DELETE CASCADE
+            );
+        `);
+    
         console.log(`[Database] Connected at: "${this.dbFilePath}"`);
     }
 
