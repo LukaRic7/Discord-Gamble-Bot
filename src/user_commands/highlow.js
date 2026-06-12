@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType} = require('discord.js');
 
 const { Colors, formatBalance, buildAuthor, handleInteractionError } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed, createTimedOutEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 /**
  * Calculates the current game multiplier based on the number of correct guesses.

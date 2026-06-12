@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ComponentType, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 module.exports = {
     // Contains the slash command instance

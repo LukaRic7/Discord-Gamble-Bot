@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
     
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed, createTimedOutEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 // Hardcode card values
 const suits = [':spades:', ':hearts:', ':diamonds:', ':clubs:'];

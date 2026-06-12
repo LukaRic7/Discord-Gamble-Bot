@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, InteractionContextType, IntegrationType, EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonStyle, ButtonBuilder, ComponentType } = require('discord.js');
 
 const { Colors, formatBalance, buildAuthor, handleInteractionError } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed, createTimedOutEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 /**
  * Calculates the maximum possible multiplier based on the selected mine count.
