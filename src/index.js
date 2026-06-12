@@ -18,7 +18,7 @@ for (const filePath of fs.readdirSync(path.join(__dirname, "user_commands"))) {
 
 // Log when the client is ready
 client.once('clientReady', async () => {
-    const db = new DatabaseManager('./database.db');
+    const db = new DatabaseManager(path.join(__dirname, '../data/database.db'));
     await db.init();
     client.db = db;
 
@@ -47,7 +47,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // Uncomment to deploy/unload global slash commands
-CommandDeployer.deploySlashCommandsGlobally();
+//CommandDeployer.deploySlashCommandsGlobally();
 
 // Launch off!
 const token = process.env.DISCORD_TOKEN;
