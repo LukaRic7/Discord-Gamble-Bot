@@ -13,7 +13,7 @@ services:
       - APPLICATION_ID=${APPLICATION_ID}
       - PUBLIC_KEY=${PUBLIC_KEY}
     volumes:
-      - ./database.db:/app/database.db
+      - /home/gamblebot/data:/app/data
     networks:
       - bot-net
 
