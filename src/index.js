@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('node:fs');
+const path = require('path');
 
 const { handleInteractionError } = require('./utils/standards.js');
 const CommandDeployer = require('./utils/deploy_commands.js');
@@ -10,7 +11,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Load commands into a collection
 client.commands = new Collection();
-for (const filePath of fs.readdirSync('./user_commands')) {
+for (const filePath of fs.readdirSync(path.join(__dirname, "user_commands"))) {
 	const command = require(`./user_commands/${filePath}`);
 	client.commands.set(command.data.name, command);
 }

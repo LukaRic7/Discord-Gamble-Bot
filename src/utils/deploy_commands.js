@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('path');
 
 // Grab all command files
-const commandsPath = path.join(__dirname, '../user_commands');
+const commandsPath = path.join(__dirname, 'user_commands');
 const commandFiles = fs.readdirSync(commandsPath);
 
 /**
