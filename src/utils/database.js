@@ -113,6 +113,14 @@ class DatabaseManager {
                     REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS game_plinko (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                total_edge_hits    INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profies (user_id)
+                    ON DELETE CASCADE
+            );
         `);
     
         console.log(`[Database] Connected at: "${this.dbFilePath}"`);
@@ -463,6 +471,43 @@ class DatabaseManager {
         `, [userId, streak, streak]);
     }
     
+    // ==========================================
+    // GAME: PLINKO
+    // ==========================================
+    
+    /**
+     * Ensures a plinko stats row exists for the user and returns it.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The plinko stats row.
+     */
+    async getPlinkoStats(userId) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            INSERT INTO game_plinko (user_id, total_edge_hits)
+            VALUES (?, 0)
+            ON CONFLICT(user_id) DO NOTHING
+        `, [userId]);
+
+        return await this.db.get(`SELECT * FROM game_plinko WHERE user_id = ?`, [userId]);
+    }
+    
+    /**
+     * Updates the user's plinko edges hit statistics.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} addHitEdge - If the user hit an edge.
+     * @returns {Promise<void>}
+     */
+    async setPlinkoStats(userId, addHitEdge) {
+        await this.db.run(`
+            INSERT INTO game_plinko (user_id, total_edge_hits)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE
+            SET
+                total_edge_hits = total_edge_hits + ?
+        `, [userId, addHitEdge]);
+    }
+
     // ==========================================
     // GAME: HIGHLOW
     // ==========================================

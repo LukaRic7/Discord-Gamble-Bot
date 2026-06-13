@@ -3,9 +3,8 @@ const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
 const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
-// 6 rows means 7 possible landing buckets at the bottom.
 const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
-const ROW_COUNT = 6;
+const ROW_COUNT = 7;
 
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
@@ -26,7 +25,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
         rows.push(padding + pegs.join('     '));
     }
 
-    // Format the Multiplier Buckets (Centered to exactly 6 characters each)
+    // Format the Multiplier Buckets
     const multStrings = MULTIPLIERS.map(m => {
         return ` ${m.toFixed(1)} `;
     });
@@ -74,12 +73,13 @@ module.exports = {
                 });
             }
 
-            // The ball always starts at the very top peg (Row 0, Index 0)
+            // The ball always starts at the very top peg
             let pos = 0;
 
             const infoStr = 'The ball starts at the top and drops down, hitting pins along the way.'
                 + ' The numbers at the bottom represent the multiplier of your stake at payout.'
 
+            // Build the initial embed for showing the plinko table
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(`${infoStr}\n\`\`\`\n${buildPlinkoCodeBlock(0, pos, false)}\n\`\`\``)
@@ -105,9 +105,7 @@ module.exports = {
                 embed.setDescription(`${infoStr}\n\`\`\`\n${buildPlinkoCodeBlock(row, pos, isGameOver)}\n\`\`\``);
                 await interaction.editReply({ embeds: [embed] });
 
-                if (!isGameOver) {
-                    await wait(1500);
-                }
+                if (!isGameOver) await wait(1500);
             }
 
             // Handle the payout outcome
@@ -115,14 +113,16 @@ module.exports = {
             const payout = betAmount * finalMultiplier;
             const profit = payout - betAmount;
             
-            // Adjust to fit your exact database saving approach
-            profile.balance += profit;
-            if (typeof profile.save === 'function') await profile.save();
-            else if (db.saveUser) await db.saveUser(profile);
+            // Update the database
+            const updatedProfile = await db.recordGamePlay(userId, betAmount, payout);
+            if (pos == (MULTIPLIERS.length - 1) / 2) {
+                await db.setPlinkoStats(userId, 1); // Hit edge
+            }
 
             embed.setFields(
+                { name: 'Stake', value: formatBalance(betAmount), inline: true },
                 { name: 'Profit', value: formatBalance(payout - betAmount, true), inline: true },
-                { name: 'New Balance', value: `:moneybag: **${formatBalance(profile.balance)}**`, inline: true }
+                { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
             )
             .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
             
