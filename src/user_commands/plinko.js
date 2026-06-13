@@ -4,8 +4,8 @@ const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = req
 const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver=false) {
-    const multipliers = [9.0, 3.5, 1.5, 0.3, 1.5, 3.5, 9.0];
-    const rowCount = 6;
+    const multipliers = [3.5, 1.5, 0.3, 1.5, 3.5];
+    const rowCount = 5;
 
     let rows = [];
 
@@ -14,8 +14,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver=false) {
 
         row.push(' '.repeat(3 * (rowCount - i)));
 
-        for (let j = 0; j <= i; j++) {
-
+        for (let j = 0; j < i * 2; j++) {
             // only show ball on current row
             if (i === currentRow && j === currentPosition) {
                 row.push('●');
@@ -92,12 +91,12 @@ module.exports = {
 
             let pos = 3;
             const history = [];
-            for (let row = 0; row < 6; row++) {
+            for (let row = 0; row < 5; row++) {
                 // move left/right
                 pos += Math.random() < 0.5 ? -1 : 1;
         
                 // keep inside board
-                pos = Math.max(0, Math.min(6, pos));
+                pos = Math.max(0, Math.min(5, pos));
         
                 history.push(pos);
 
