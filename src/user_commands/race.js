@@ -44,6 +44,7 @@ module.exports = {
             const startUnix = Math.floor(Date.now() / 1000) + intermission;
 
             let raceStarted = false;
+            const raceOwnerAuthor = buildAuthor(interaction);
 
             const buildHorseFields = () => {
                 const fields = [];
@@ -229,6 +230,8 @@ module.exports = {
             });
 
             collector.on('end', async (_, reason) => {
+                raceStarted = true;
+
                 // Remove buttons from main message
                 await interaction.editReply({ components: [] });
 
@@ -296,7 +299,7 @@ module.exports = {
                         const spacesCovered = pos;
                         
                         // Build the reversed track string
-                        const track = `_|${'\\_'.repeat(spacesToFinish)}:racehorse:${'_'.repeat(spacesCovered)}(${h.id})`;
+                        const track = `\\_|${'\\_'.repeat(spacesToFinish)}:racehorse:${'\\_'.repeat(spacesCovered)}(${h.id})`;
                         
                         // Display odds as 1 : ratio instead of the multiplier
                         raceDesc += `**Horse ${h.id} (1 : ${h.ratio})**\n${track}\n`;
@@ -353,28 +356,18 @@ module.exports = {
 
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
-                    .setDescription(`Winner: ${winningHorse.label} (${winningHorse.ratio.toFixed(2)}x)`)
+                    .setDescription(`Winner: :racehorse: **Horse ${winningHorse.id}** (${winningHorse.ratio.toFixed(2)}x)`)
                     .setColor(Colors.GREEN)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
 
                 const winnerField = winners.length
-                    ? { name: 'Winners', value: winners.map(w => `${w.userTag}
-                        Stake: ${formatBalance(w.stake)}
-                        Horse Bet: ${w.horse}
-                        Winner: ${winningHorse.id}
-                        Profit: ${formatBalance(w.profit, true)}
-                        New Balance: ${formatBalance(w.newBalance)}`).join('\n\n') }
-                    : { name: 'Winners', value: 'No winners this race.' };
+                    ? { name: 'Winners', value: winners.map(w => `> <@${w.id}> (**${formatBalance(w.profit, true)}**)`).join('\n'), inline: false }
+                    : { name: 'Winners', value: '*No winners this race.*', inline: false };
 
                 const loserField = losers.length
-                    ? { name: 'Losers', value: losers.map(l => `${l.userTag}
-                        Stake: ${formatBalance(l.stake)}
-                        Horse Bet: ${l.horse}
-                        Winner: ${winningHorse.id}
-                        Profit: ${formatBalance(l.profit, true)}
-                        New Balance: ${formatBalance(l.newBalance)}`).join('\n\n') }
-                    : { name: 'Losers', value: 'No losers this race.' };
+                    ? { name: 'Losers', value: losers.map(l => `> <@${l.id}> (**${formatBalance(l.profit, true)}**)`).join('\n'), inline: false }
+                    : { name: 'Losers', value: '*No losers this race.*', inline: false };
 
                 resultEmbed.addFields(winnerField, loserField);
                 await interaction.editReply({ embeds: [resultEmbed], components: [] });
@@ -383,20 +376,21 @@ module.exports = {
                     try {
                         const user = await interaction.client.users.fetch(result.userId);
                         const dmEmbed = new EmbedBuilder()
+                            .setAuthor(raceOwnerAuthor)
                             .setTitle(':horse_racing: Race Result')
-                            .setDescription(`The race is over. Here are your results.`)
+                            .setDescription('The race is over. Here are your results!')
                             .addFields(
                                 { name: 'Stake', value: formatBalance(result.stake), inline: true },
                                 { name: 'Horse Bet', value: `Horse ${result.horse}`, inline: true },
                                 { name: 'Winning Horse', value: `Horse ${winningHorse.id}`, inline: true },
                                 { name: 'Profit', value: formatBalance(result.profit, true), inline: true },
-                                { name: 'New Balance', value: formatBalance(result.newBalance), inline: true }
+                                { name: 'New Balance', value: `:moneybag: **${formatBalance(result.newBalance)}**`, inline: true }
                             )
                             .setColor(result.resultType === 'win' ? Colors.GREEN : Colors.RED)
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
 
-                        await user.send({ embeds: [dmEmbed] });
+                        await user.send({ embeds: [dmEmbed], flags: MessageFlags.Ephemeral });
                     } catch {
                         // Ignore DM failures silently.
                     }
