@@ -200,8 +200,11 @@ class DatabaseManager {
      */
     async recordGamePlay(userId, betAmount, winAmount) {
         await this.ensureUser(userId);
-        const netProfit = winAmount - betAmount;
+        let netProfit = winAmount - betAmount;
         
+        // Round to nearest 2 decimal places
+        netProfit = Math.floor(netProfit * 100) / 100;
+
         await this.db.run(`
             UPDATE player_profiles 
             SET 
@@ -300,6 +303,9 @@ class DatabaseManager {
     async transferMoney(senderId, recipientId, amount) {
         await this.ensureUser(senderId);
         await this.ensureUser(recipientId);
+
+        // Round to nearest 2 decimal places
+        amount = Math.floor(amount * 100) / 100;
 
         await this.db.run(`
             UPDATE player_profiles
