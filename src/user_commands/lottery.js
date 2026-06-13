@@ -261,7 +261,7 @@ module.exports = {
 
                         await user.send({ embeds: [dm], flags: MessageFlags.Ephemeral });
                     } catch {
-                        // ignore
+                        // Ignore
                     }
                 }
             });
