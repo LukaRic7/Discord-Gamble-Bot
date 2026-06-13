@@ -74,6 +74,7 @@ module.exports = {
                 .addFields(
                     { name: 'Your Card', value: `${playerCard.label}`, inline: true },
                     { name: 'Dealer Card', value: `${dealerCard.label}`, inline: true },
+                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                     { name: 'Stake', value: formatBalance(stake), inline: true },
                     { name: 'Profit', value: formatBalance(playerWins ? stake : -stake, true), inline: true },
                     { name: 'Win Streak', value: `:fire: ${newStreak}`, inline: true },
