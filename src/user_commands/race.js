@@ -63,8 +63,6 @@ module.exports = {
                 .setColor(Colors.YELLOW)
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
-            
-            await refreshMainEmbed(true);
 
             const joinButton = new ButtonBuilder().setCustomId('race_join').setLabel('Join Race').setStyle(ButtonStyle.Primary);
             const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
