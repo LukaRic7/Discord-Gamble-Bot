@@ -22,6 +22,7 @@ const CARD_RANKS = [
 const drawCard = () => CARD_RANKS[Math.floor(Math.random() * CARD_RANKS.length)];
 
 module.exports = {
+    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('war')
         .setDescription('Pull a card against a dealer, highest card wins.')
@@ -36,7 +37,8 @@ module.exports = {
             InteractionContextType.BotDM,
             InteractionContextType.PrivateChannel
         ),
-
+        
+    // Callback for when the command is executed
     async execute(interaction) {
         const stake = interaction.options.getNumber('stake');
         const db = interaction.client.db;

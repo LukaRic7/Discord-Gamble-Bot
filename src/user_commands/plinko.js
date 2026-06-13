@@ -6,6 +6,23 @@ const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
 const ROW_COUNT = 7;
 
+/**
+ * Builds a visual ASCII representation of a Plinko game board.
+ *
+ * This function renders:
+ * - A pyramid of pegs with an optional falling ball position
+ * - A row of multiplier buckets at the bottom
+ * - A final "drop slot" row showing where the ball lands when the game ends
+ *
+ * When `gameOver` is false, the ball is rendered at its current position
+ * inside the pyramid. When `gameOver` is true, the ball is only shown in
+ * the final bucket row instead.
+ *
+ * @param {number} currentRow - The current row index of the falling ball.
+ * @param {number} currentPosition - The horizontal position of the ball in the current row / final bucket index.
+ * @param {boolean} [gameOver=false] - Whether the simulation has finished and the ball has landed.
+ * @returns {string} A multi-line string representing the full Plinko board state.
+ */
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
 
@@ -43,6 +60,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
 }
 
 module.exports = {
+    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('plinko')
         .setDescription('Play a game of plinko.')
@@ -57,7 +75,8 @@ module.exports = {
             InteractionContextType.BotDM,
             InteractionContextType.PrivateChannel
         ),
-    
+        
+    // Callback for when the command is executed
     async execute(interaction) {
         const betAmount = interaction.options.getNumber('stake');
         const userId = interaction.user.id;

@@ -4,6 +4,7 @@ const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = req
 const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 module.exports = {
+    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('lottery')
         .setDescription('Start a lottery pool that other people can join. Random winner wins the pool.')
@@ -25,7 +26,8 @@ module.exports = {
             InteractionContextType.BotDM,
             InteractionContextType.PrivateChannel
         ),
-
+        
+    // Callback for when the command is executed
     async execute(interaction) {
         const db = interaction.client.db;
         const ticketPrice = Math.floor(interaction.options.getNumber('ticket_price'));
