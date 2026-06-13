@@ -47,7 +47,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // Uncomment to deploy/unload global slash commands
-//CommandDeployer.deploySlashCommandsGlobally();
+CommandDeployer.deploySlashCommandsGlobally();
 
 // Launch off!
 const token = process.env.DISCORD_TOKEN;
