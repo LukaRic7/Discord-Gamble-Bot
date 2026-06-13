@@ -13,7 +13,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     // 1. Build the 6 rows of the pyramid
     for (let i = 0; i < ROW_COUNT; i++) {
         // 24 spaces perfectly centers the top peg relative to the 7 buckets below
-        let padding = ' '.repeat(24 - i);
+        let padding = ' '.repeat(24 - i * 2);
         let pegs = [];
 
         for (let j = 0; j <= i; j++) {
@@ -27,11 +27,9 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
         rows.push(padding + pegs.join(' '));
     }
 
-    rows.push(''); // Blank line separator
-
     // 2. Format the Multiplier Buckets (Centered to exactly 6 characters each)
     const multStrings = MULTIPLIERS.map(m => {
-        const str = `${m}x`;
+        const str = m.toFixed(1);
         const padLeft = Math.floor((6 - str.length) / 2);
         const padRight = 6 - str.length - padLeft;
         return ' '.repeat(padLeft) + str + ' '.repeat(padRight);
@@ -42,10 +40,10 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     // 3. Drop the ball into the specific bucket when the game ends
     if (gameOver) {
         const ballRow = MULTIPLIERS.map((_, i) => {
-            return i === currentPosition ? '  ●   ' : '      ';
+            return i === currentPosition ? '  ●  ' : '     ';
         });
         // 1 space prefix aligns the drop slots perfectly with the '|' dividers
-        rows.push(' ' + ballRow.join(' ')); 
+        rows.push(' ' + ballRow.join(' '));
     }
 
     return rows.join('\n');
@@ -85,9 +83,12 @@ module.exports = {
             // The ball always starts at the very top peg (Row 0, Index 0)
             let pos = 0;
 
+            const infoStr = 'The ball starts at the top and drops down, hitting pins along the way.'
+                + ' The numbers at the bottom represent the multiplier of your stake at payout.'
+
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
-                .setDescription(`\`\`\`\n${buildPlinkoCodeBlock(0, pos, false)}\n\`\`\``)
+                .setDescription(`${infoStr}\n\`\`\`\n${buildPlinkoCodeBlock(0, pos, false)}\n\`\`\``)
                 .setFields(
                     { name: 'Stake', value: formatBalance(betAmount), inline: true }
                 )
@@ -105,7 +106,7 @@ module.exports = {
                 
                 const isGameOver = (row === ROW_COUNT);
                 
-                embed.setDescription(`\`\`\`\n${buildPlinkoCodeBlock(row, pos, isGameOver)}\n\`\`\``);
+                embed.setDescription(`${infoStr}\n\`\`\`\n${buildPlinkoCodeBlock(row, pos, isGameOver)}\n\`\`\``);
                 await interaction.editReply({ embeds: [embed] });
 
                 if (!isGameOver) {
