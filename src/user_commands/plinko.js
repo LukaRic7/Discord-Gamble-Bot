@@ -13,7 +13,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     // 1. Build the 6 rows of the pyramid
     for (let i = 0; i < ROW_COUNT; i++) {
         // 24 spaces perfectly centers the top peg relative to the 7 buckets below
-        let padding = ' '.repeat(24 - i * 2);
+        let padding = '   '.repeat(24 - i);
         let pegs = [];
 
         for (let j = 0; j <= i; j++) {
@@ -24,15 +24,12 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
                 pegs.push('·');
             }
         }
-        rows.push(padding + pegs.join(' '));
+        rows.push(padding);
     }
 
     // 2. Format the Multiplier Buckets (Centered to exactly 6 characters each)
     const multStrings = MULTIPLIERS.map(m => {
-        const str = m.toFixed(1);
-        const padLeft = Math.floor((6 - str.length) / 2);
-        const padRight = 6 - str.length - padLeft;
-        return ' '.repeat(padLeft) + str + ' '.repeat(padRight);
+        return ` ${m.toFixed(1)} `;
     });
     
     rows.push(`[${multStrings.join('|')}]`);
