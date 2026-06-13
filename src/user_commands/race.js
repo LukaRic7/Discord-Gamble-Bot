@@ -131,7 +131,8 @@ module.exports = {
                             new ButtonBuilder().setCustomId('race_join_abort').setLabel('Abort').setStyle(ButtonStyle.Danger)
                         );
 
-                        await i.reply({ embeds: [selectionEmbed], components: [horseButtons, betButtons, abortButton], ephemeral: true });
+                        // FIX: Use flags: MessageFlags.Ephemeral instead of ephemeral: true
+                        await i.reply({ embeds: [selectionEmbed], components: [horseButtons, betButtons, abortButton], flags: MessageFlags.Ephemeral });
                         const joinMsg = await i.fetchReply();
 
                         let chosenHorse = null;
@@ -140,12 +141,13 @@ module.exports = {
 
                         const joinCollector = joinMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
-                        const updateSelectionEmbed = async () => {
+                        // FIX: Update using the button interaction, and format the chosenHorse/Bet variables correctly
+                        const updateSelectionEmbed = async (btnInteraction) => {
                             const updatedEmbed = EmbedBuilder.from(selectionEmbed).setFields(
-                                { name: 'Horse', value: String(chosenHorse), inline: true },
-                                { name: 'Stake', value: String(chosenBet), inline: true }
+                                { name: 'Horse', value: chosenHorse ? `Horse ${chosenHorse.id}` : '*None*', inline: true },
+                                { name: 'Stake', value: chosenBet ? String(chosenBet) : '*None*', inline: true }
                             );
-                            await joinMsg.edit({ embeds: [updatedEmbed] });
+                            await btnInteraction.update({ embeds: [updatedEmbed] });
                         };
 
                         joinCollector.on('collect', async (btn) => {
@@ -162,7 +164,6 @@ module.exports = {
 
                             if (btn.customId.startsWith('race_pick_horse_')) {
                                 chosenHorse = HORSES.find(h => btn.customId.endsWith(`_${h.id}`));
-                                await updateSelectionEmbed();
                             } else if (btn.customId.startsWith('race_pick_bet_')) {                                
                                 chosenBet = Number(btn.customId.split('_').pop());
                                 const currentProfile = await db.getUser(i.user.id);
@@ -170,22 +171,24 @@ module.exports = {
                                     chosenBet = null;
                                     return await btn.update({ embeds: [await createInsufficientMoneyEmbed(i, chosenBet)], components: [horseButtons, betButtons, abortButton] });
                                 }
-                                
-                                await updateSelectionEmbed();
                             }
 
+                            // FIX: Check if both are ready, if not, just update the embed safely.
                             if (chosenHorse && chosenBet) {
                                 participants.set(i.user.id, { userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
                                 joined = true;
                                 await btn.update({ embeds: [new EmbedBuilder().setDescription(`:white_check_mark: You joined the race with Horse ${chosenHorse.id} paying ${formatBalance(chosenBet)}.`).setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 await refreshMainEmbed();
                                 return joinCollector.stop('joined');
+                            } else {
+                                await updateSelectionEmbed(btn);
                             }
                         });
 
                         joinCollector.on('end', async (_, reason) => {
                             if (!joined && reason === 'time') {
-                                await joinMsg.edit({ embeds: [createTimedOutEmbed(i)], components: [] });
+                                // FIX: Use i.editReply to safely edit the ephemeral parent interaction
+                                await i.editReply({ embeds: [createTimedOutEmbed(i)], components: [] });
                             }
                         });
                     } else if (i.customId === 'race_leave') {
