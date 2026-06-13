@@ -193,7 +193,7 @@ module.exports = {
 
                             // Check if both are ready, if not, just update the embed safely.
                             if (chosenHorse && chosenBet) {
-                                participants.set(i.user.id, { userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
+                                participants.set(i.user.id, { id: i.user.id, userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
                                 joined = true;
 
                                 // Build the embed to show the user what they picked
