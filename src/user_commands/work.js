@@ -22,8 +22,9 @@ module.exports = {
             const data = await db.getWorkData(userId);
 
             let diffSeconds = 123456;
+            let last;
             if (data.last_work_claim) {
-                const last = new Date((data.last_work_claim).replace(' ', 'T') + 'Z');
+                last = new Date((data.last_work_claim).replace(' ', 'T') + 'Z');
                 const now = new Date();
                 diffSeconds = (now - last) / 1000;
             }
