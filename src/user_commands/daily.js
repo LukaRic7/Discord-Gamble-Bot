@@ -62,7 +62,7 @@ module.exports = {
             streak += 1;
             
             // Calculate reward and claim it
-            const reward = 100 * (1 + (0.05 * (streak - 1)));
+            const reward = 250 * (1 + (0.05 * (streak - 1)));
             const updatedProfile = await db.claimDaily(userId, reward, streak);
 
             // Build the embed to show the successful daily claim
