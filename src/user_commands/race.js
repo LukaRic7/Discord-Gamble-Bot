@@ -296,7 +296,7 @@ module.exports = {
                         const spacesCovered = pos;
                         
                         // Build the reversed track string
-                        const track = `_|${'_'.repeat(spacesToFinish)}:racehorse:${'_'.repeat(spacesCovered)}(${h.id})`;
+                        const track = `_|${'\\_'.repeat(spacesToFinish)}:racehorse:${'_'.repeat(spacesCovered)}(${h.id})`;
                         
                         // Display odds as 1 : ratio instead of the multiplier
                         raceDesc += `**Horse ${h.id} (1 : ${h.ratio})**\n${track}\n`;
