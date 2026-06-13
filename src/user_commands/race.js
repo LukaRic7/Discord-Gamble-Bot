@@ -250,11 +250,32 @@ module.exports = {
                 let winnerIndex = -1;
 
                 while (winnerIndex === -1) {
-                    await wait(800);
+                    await wait(1500);
 
-                    // Advance each horse by a random amount 1..6
+                    // Advance each horse based on their odds
                     for (let idx = 0; idx < HORSES.length; idx++) {
-                        positions[idx] += Math.floor(Math.random() * 6) + 1;
+                        const h = HORSES[idx];
+                        
+                        // 1. Base movement (1 to 3 spaces) keeps the race moving for everyone
+                        let step = Math.floor(Math.random() * 3) + 1;
+                        
+                        // 2. Odds advantage: 
+                        // We invert the ratio (1 / ratio) to get a probability.
+                        // Ratio 2.0 -> 50% chance for a bonus.
+                        // Ratio 6.0 -> ~16% chance for a bonus.
+                        if (Math.random() < (1 / h.ratio)) {
+                            step += 2; 
+                        }
+                        
+                        // 3. High variance "sprint"
+                        // Gives a flat 10% chance for any horse to get a massive burst of speed (adds 2 to 5 spaces).
+                        // This is crucial so that the 1:6 underdog can still mathematically win.
+                        if (Math.random() < 0.10) {
+                            step += Math.floor(Math.random() * 4) + 2; 
+                        }
+                    
+                        positions[idx] += step;
+                        
                         if (positions[idx] >= trackLength) {
                             winnerIndex = idx;
                             break;
@@ -266,8 +287,19 @@ module.exports = {
                     for (let idx = 0; idx < HORSES.length; idx++) {
                         const h = HORSES[idx];
                         const pos = Math.min(positions[idx], trackLength);
-                        const track = '─'.repeat(pos) + h.label + ' ' + '─'.repeat(Math.max(0, trackLength - pos));
-                        raceDesc += `**${h.label} (${h.ratio}x)**\n${track}\n`;
+                        
+                        // The finish line is on the left. 
+                        // Spaces ahead of the horse shrink as 'pos' grows.
+                        const spacesToFinish = Math.max(0, trackLength - pos);
+                        
+                        // Spaces behind the horse grow as 'pos' grows.
+                        const spacesCovered = pos;
+                        
+                        // Build the reversed track string
+                        const track = `_|${'_'.repeat(spacesToFinish)}:racehorse:${'_'.repeat(spacesCovered)}(${h.id})`;
+                        
+                        // Display odds as 1 : ratio instead of the multiplier
+                        raceDesc += `**Horse ${h.id} (1 : ${h.ratio})**\n${track}\n`;
                     }
 
                     embed.setDescription(raceDesc);
@@ -296,24 +328,24 @@ module.exports = {
                     } else if (p.horseId === winningHorse.id) {
                         const payout = Math.floor(p.bet * p.ratio);
                         profit = payout - p.bet;
-                        newBalance = profile.balance + profit;
-                        await db.recordGamePlay(userId, p.bet, payout);
+                        const updatedProfile = await db.recordGamePlay(userId, p.bet, payout);
 
                         const stats = await db.getRaceStats(userId);
                         const currentStreak = stats ? (stats.current_win_streak || 0) : 0;
                         await db.setRaceStats(userId, 1, currentStreak + 1);
-
-                        winners.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance });
+                        
+                        newBalance = updatedProfile.balance;
+                        winners.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
                         resultType = 'win';
                     } else {
                         profit = -p.bet;
-                        newBalance = profile.balance - p.bet;
-                        await db.recordGamePlay(userId, p.bet, 0);
+                        const updatedProfile = await db.recordGamePlay(userId, p.bet, 0);
 
                         const stats = await db.getRaceStats(userId);
                         await db.setRaceStats(userId, 0, 0);
 
-                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance });
+                        newBalance = updatedProfile.balance;
+                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
                     }
 
                     participantResults.push({ userId, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance, resultType });
@@ -321,7 +353,7 @@ module.exports = {
 
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
-                    .setDescription(`Winner: ${winningHorse.label} (${winningHorse.ratio}x)`)
+                    .setDescription(`Winner: ${winningHorse.label} (${winningHorse.ratio.toFixed(2)}x)`)
                     .setColor(Colors.GREEN)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
