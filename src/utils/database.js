@@ -343,7 +343,10 @@ class DatabaseManager {
                 m.bombs_hit AS mines_bombs_hit, m.diamonds_hit AS mines_diamonds_hit, m.perfect_games AS mines_perfect_games,
                 s.jackpots_hit AS slots_jackpots_hit, s.longest_win_streak AS slots_longest_win_streak,
                 pl.total_edge_hits AS plinko_total_edge_hits,
-                r.races_won AS race_races_won, r.longest_win_streak AS race_longest_win_streak
+                r.races_won AS race_races_won, r.longest_win_streak AS race_longest_win_streak,
+                w.kings_pulled AS war_kings_pulled, w.longest_win_streak AS war_longest_win_streak,
+                l.times_won AS lottery_times_won,
+                d.longest_win_streak AS dice_longest_win_streak
             FROM player_profiles p
             LEFT JOIN game_blackjack b ON p.user_id = b.user_id
             LEFT JOIN game_chests c ON p.user_id = c.user_id
@@ -354,6 +357,9 @@ class DatabaseManager {
             LEFT JOIN game_slots s ON p.user_id = s.user_id
             LEFT JOIN game_plinko pl ON p.user_id = pl.user_id
             LEFT JOIN game_race r ON p.user_id = r.user_id
+            LEFT JOIN game_war w ON p.user_id = w.user_id
+            LEFT JOIN game_lottery l ON p.user_id = l.user_id
+            LEFT JOIN game_dice d ON p.user_id = d.user_id
             WHERE p.user_id = ?
         `;
     
