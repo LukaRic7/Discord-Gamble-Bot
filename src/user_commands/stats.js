@@ -110,7 +110,11 @@ module.exports = {
                         value: buildField(`Races Won: ${thousandSeperator.format(stats.race_races_won || 0)}`, `Best Streak: ${stats.race_longest_win_streak || 0}`),
                         inline: true
                     },
-                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
+                    {
+                        name: ':boom: War',
+                        value: buildField(`Kings Pulled: ${thousandSeperator.format(stats.war_kings_pulled || 0)}`, `Best Streak: ${stats.war_longest_win_streak || 0}`),
+                        inline: true
+                    },
                     { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                     {
                         name: ':coin: Coinflip',
@@ -131,6 +135,17 @@ module.exports = {
                     {
                         name: ':small_red_triangle: Plinko',
                         value: buildField(`Edges Hit: ${stats.plinko_total_edge_hits || 0}`),
+                        inline: true
+                    },
+                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
+                    {
+                        name: ':tickets: Lottery',
+                        value: buildField(`Times Won: ${stats.lottery_times_won || 0}`),
+                        inline: true
+                    },
+                    {
+                        name: ':game_die: Dice',
+                        value: buildField(`Best Streak: ${stats.dice_longest_win_streak || 0}`),
                         inline: true
                     },
                     { name: '\u200B', value: '\u200B', inline: true }, // Spacer

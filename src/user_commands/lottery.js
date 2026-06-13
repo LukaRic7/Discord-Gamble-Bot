@@ -221,6 +221,7 @@ module.exports = {
                     // Winner gets the pool
                     if (userId === winnerId) {
                         const updated = await db.recordGamePlay(userId, ticketPrice, pool);
+                        await db.setLotteryStats(userId, 1);
                         const profit = (pool - ticketPrice);
 
                         winner = { userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance };
