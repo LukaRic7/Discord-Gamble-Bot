@@ -66,7 +66,7 @@ module.exports = {
             const warStats = await db.getWarStats(interaction.user.id);
             const currentStreak = warStats ? (warStats.current_win_streak ?? 0) : 0;
             const newStreak = playerWins ? currentStreak + 1 : 0;
-            await db.setWarStats(interaction.user.id, playerWins ? 1 : 0, newStreak);
+            await db.setWarStats(interaction.user.id, playerCard.name === 'K', newStreak);
 
             // Build the embed to show results
             const resultEmbed = new EmbedBuilder()
