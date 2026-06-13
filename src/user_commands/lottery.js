@@ -12,7 +12,7 @@ module.exports = {
             .setDescription('The price per lottery ticket.')
             .setRequired(true)
             .setMinValue(100)
-            .setMaxValue(100000)
+            .setMaxValue(5000)
         )
         .addNumberOption((option) => option
             .setName('intermission_duration')
