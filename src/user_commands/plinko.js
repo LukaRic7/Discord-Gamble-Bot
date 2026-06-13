@@ -3,48 +3,55 @@ const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
 const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
-function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver=false) {
-    const multipliers = [3.5, 1.5, 0.3, 1.5, 3.5];
-    const rowCount = 5;
+// 6 rows means 7 possible landing buckets at the bottom.
+const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
+const ROW_COUNT = 6;
 
+function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
 
-    for (let i = 0; i < rowCount; i++) {
-        let row = [];
+    // 1. Build the 6 rows of the pyramid
+    for (let i = 0; i < ROW_COUNT; i++) {
+        // 24 spaces perfectly centers the top peg relative to the 7 buckets below
+        let padding = ' '.repeat(24 - i);
+        let pegs = [];
 
-        row.push(' '.repeat(3 * (rowCount - i)));
-
-        for (let j = 0; j < i * 2; j++) {
-            // only show ball on current row
-            if (i === currentRow && j === currentPosition) {
-                row.push('●');
+        for (let j = 0; j <= i; j++) {
+            // Render the ball if it's on the current row/pos, otherwise render a peg
+            if (!gameOver && i === currentRow && j === currentPosition) {
+                pegs.push('●');
             } else {
-                row.push('·');
+                pegs.push('·');
             }
-
-            row.push('  ');
         }
-
-        rows.push(row.join(''));
+        rows.push(padding + pegs.join(' '));
     }
 
-    rows.push('| ' + multipliers.map(x => x + 'x').join(' | ') + ' |');
+    rows.push(''); // Blank line separator
 
+    // 2. Format the Multiplier Buckets (Centered to exactly 6 characters each)
+    const multStrings = MULTIPLIERS.map(m => {
+        const str = `${m}x`;
+        const padLeft = Math.floor((6 - str.length) / 2);
+        const padRight = 6 - str.length - padLeft;
+        return ' '.repeat(padLeft) + str + ' '.repeat(padRight);
+    });
+    
+    rows.push(`[${multStrings.join('|')}]`);
+
+    // 3. Drop the ball into the specific bucket when the game ends
     if (gameOver) {
-        rows.push(
-            '| ' +
-            multipliers.map((_, i) =>
-                i === currentPosition ? ' ⬤ ' : '   '
-            ).join('|') +
-            '|'
-        );
+        const ballRow = MULTIPLIERS.map((_, i) => {
+            return i === currentPosition ? '  ●   ' : '      ';
+        });
+        // 1 space prefix aligns the drop slots perfectly with the '|' dividers
+        rows.push(' ' + ballRow.join(' ')); 
     }
 
     return rows.join('\n');
 }
 
 module.exports = {
-    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('plinko')
         .setDescription('Play a game of plinko.')
@@ -68,7 +75,6 @@ module.exports = {
         try {
             const profile = await db.ensureUser(userId);
 
-            // Ensure the user has enough money
             if (profile.balance < betAmount) {
                 return await interaction.reply({
                     embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)],
@@ -76,10 +82,12 @@ module.exports = {
                 });
             }
 
-            // Build the initial embed
+            // The ball always starts at the very top peg (Row 0, Index 0)
+            let pos = 0;
+
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
-                .setDescription(buildPlinkoCodeBlock([]))
+                .setDescription(`\`\`\`\n${buildPlinkoCodeBlock(0, pos, false)}\n\`\`\``)
                 .setFields(
                     { name: 'Stake', value: formatBalance(betAmount), inline: true }
                 )
@@ -88,25 +96,41 @@ module.exports = {
                 .setFooter({ text: 'Gamble Bot' });
 
             await interaction.reply({ embeds: [embed] });
+            await wait(1500);
 
-            let pos = 3;
-            const history = [];
-            for (let row = 0; row < 5; row++) {
-                // move left/right
-                pos += Math.random() < 0.5 ? -1 : 1;
-        
-                // keep inside board
-                pos = Math.max(0, Math.min(5, pos));
-        
-                history.push(pos);
+            // Animate the drops row by row
+            for (let row = 1; row <= ROW_COUNT; row++) {
+                // Ball falls left (+0) or right (+1)
+                pos += Math.random() < 0.5 ? 0 : 1;
+                
+                const isGameOver = (row === ROW_COUNT);
+                
+                embed.setDescription(`\`\`\`\n${buildPlinkoCodeBlock(row, pos, isGameOver)}\n\`\`\``);
+                await interaction.editReply({ embeds: [embed] });
 
-                embed.setDescription(`\`\`\`\n${buildPlinkoCodeBlock(row, pos)}\n\`\`\``);
-                interaction.editReply({ embeds: [embed] });
-
-                await wait(1500);
+                if (!isGameOver) {
+                    await wait(1500);
+                }
             }
 
-            // Handle winning later
+            // Handle the payout outcome
+            const finalMultiplier = MULTIPLIERS[pos];
+            const winnings = betAmount * finalMultiplier;
+            const profit = winnings - betAmount;
+            
+            // Adjust to fit your exact database saving approach
+            profile.balance += profit;
+            if (typeof profile.save === 'function') await profile.save();
+            else if (db.saveUser) await db.saveUser(profile);
+
+            embed.addFields(
+                { name: 'Multiplier', value: `${finalMultiplier}x`, inline: true },
+                { name: 'Payout', value: formatBalance(winnings), inline: true }
+            );
+            
+            // Turn embed Green for profit, Yellow for breaking even, Red for loss
+            embed.setColor(profit > 0 ? Colors.GREEN : (profit === 0 ? Colors.YELLOW : Colors.RED));
+            await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
             handleInteractionError(interaction, error);
