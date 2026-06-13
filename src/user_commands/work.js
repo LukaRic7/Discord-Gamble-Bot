@@ -21,9 +21,12 @@ module.exports = {
             const profile = await db.ensureUser(userId);
             const data = await db.getWorkData(userId);
 
-            const last = new Date(data.last_work_claim.replace(' ', 'T') + 'Z');
-            const now = new Date();
-            const diffSeconds = (now - last) / 1000;
+            let diffSeconds = 123456;
+            if (data.last_work_claim) {
+                const last = new Date((data.last_work_claim).replace(' ', 'T') + 'Z');
+                const now = new Date();
+                diffSeconds = (now - last) / 1000;
+            }
             
             // Check if 10 minutes passed
             if (diffSeconds < 600) {
