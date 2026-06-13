@@ -142,8 +142,8 @@ module.exports = {
 
                         const updateSelectionEmbed = async () => {
                             const updatedEmbed = EmbedBuilder.from(selectionEmbed).setFields(
-                                { name: 'Horse', value: chosenHorse, inline: true },
-                                { name: 'Stake', value: chosenBet, inline: true }
+                                { name: 'Horse', value: String(chosenHorse), inline: true },
+                                { name: 'Stake', value: String(chosenBet), inline: true }
                             );
                             await joinMsg.edit({ embeds: [updatedEmbed] });
                         };
@@ -190,7 +190,7 @@ module.exports = {
                         });
                     } else if (i.customId === 'race_leave') {
                         if (!participants.has(i.user.id)) {
-                            return i.reply({ embeds: [new EmbedBuilder().setDescription(':information_source: You are not in the race.').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], flags: MessageFlags.Ephemeral });
+                            return i.reply({ embeds: [new EmbedBuilder().setDescription(':x: You are not in the race.').setColor(Colors.RED).setTimestamp().setFooter({ text: 'Gamble Bot' })], flags: MessageFlags.Ephemeral });
                         }
 
                         // Ask for confirmation
@@ -210,7 +210,7 @@ module.exports = {
                                 await refreshMainEmbed();
                                 leaveCollector.stop('left');
                             } else {
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':information_source: Leave cancelled.').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':x: Leave cancelled.').setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 leaveCollector.stop('cancelled');
                             }
                         });
