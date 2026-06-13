@@ -54,7 +54,7 @@ module.exports = {
                 .setFooter({ text: 'Gamble Bot' });
             
             await interaction.reply({ embeds: [embed] });
-        } catch {
+        } catch (error) {
             handleInteractionError(interaction, error);
         }
     }
