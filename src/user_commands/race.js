@@ -55,7 +55,7 @@ module.exports = {
                 embed.setDescription(`Race starts <t:${startUnix}:R>.`)
                     .setFields(...fields);
                 
-                await interaction.editReply({ embeds: [embed], components: [joinButton, leaveButton] });
+                await interaction.editReply({ embeds: [embed] });
             };
 
             const embed = new EmbedBuilder()
