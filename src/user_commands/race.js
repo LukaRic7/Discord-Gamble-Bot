@@ -45,21 +45,27 @@ module.exports = {
 
             let raceStarted = false;
 
-            // Helper to edit main embed
-            const refreshMainEmbed = async () => {
+            const buildHorseFields = () => {
                 const fields = [];
                 for (const h of HORSES) {
                     fields.push({ name: `Horse ${h.id}`, value: `-# Odds: 1:${Math.round(h.ratio)}\n> *no bets yet*`, inline: false });
                 }
 
+                return fields;
+            }
+
+            // Helper to edit main embed
+            const refreshMainEmbed = async () => {
                 embed.setDescription(`Race starts <t:${startUnix}:R>.`)
-                    .setFields(...fields);
+                    .setFields(...buildHorseFields());
                 
                 await interaction.editReply({ embeds: [embed] });
             };
 
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
+                .setDescription(`Race starts <t:${startUnix}:R>.`)
+                .setFields(...buildHorseFields())
                 .setColor(Colors.YELLOW)
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
