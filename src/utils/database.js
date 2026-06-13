@@ -38,6 +38,7 @@ class DatabaseManager {
                 lifetime_profit    BIGINT       DEFAULT 0,
                 daily_streak       INT          DEFAULT 0,
                 last_daily_claim   TIMESTAMP    NULL,
+                last_work_claim    TIMESTAMP    NULL,
                 total_games_played INT          DEFAULT 0,
                 created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
                 total_payed        BIGINT       DEFAULT 0,
@@ -190,16 +191,49 @@ class DatabaseManager {
     async claimDaily(userId, reward, newStreak) {
         await this.ensureUser(userId);
     
-        await this.db.run(
-            `UPDATE player_profiles
-             SET 
+        await this.db.run(`
+            UPDATE player_profiles
+            SET 
                 last_daily_claim = CURRENT_TIMESTAMP,
                 balance = balance + ?,
                 daily_streak = ?
-             WHERE user_id = ?`,
-            [reward, newStreak, userId]
-        );
+            WHERE user_id = ?
+        `, [reward, newStreak, userId]);
     
+        return await this.getUser(userId);
+    }
+    
+    /**
+     * Retrieves the work reward metadata for a user.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The user's work streak and last claim timestamp.
+     */
+    async getWorkData(userId) {
+        await this.ensureUser(userId);
+
+        return await this.db.get(
+            `SELECT last_work_claim FROM player_profiles WHERE user_id = ?`,
+            [userId]
+        );
+    }
+
+    /**
+     * Claims the work reward and updates the balance information.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} reward - The amount to credit.
+     * @returns {Promise<Object>} The updated user profile row.
+     */
+    async claimWork(userId, reward) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            UPDATE player_profiles
+            SET
+                last_work_claim = CURRENT_TIMESTAMP,
+                balance = balance + ?
+            WHERE user_id = ?
+        `, [reward, userId]);
+
         return await this.getUser(userId);
     }
 
@@ -260,8 +294,6 @@ class DatabaseManager {
             WHERE p.user_id = ?
         `;
     
-        // Execute the query. (e.g., if using sqlite)
-        // Replace this execution line with your actual DB query execution syntax
         const row = await this.db.get(query, [userId]); 
         
         return row;
