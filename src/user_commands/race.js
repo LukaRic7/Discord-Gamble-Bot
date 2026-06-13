@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ComponentType, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ComponentType, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed, createTimedOutEmbed } = require('../utils/standard_embeds.js');
 
 // Horses configuration: label and payout ratio
 const HORSES = [
@@ -41,12 +41,21 @@ module.exports = {
         const intermission = interaction.options.getNumber('intermission_duration');
 
         try {
+            const startUnix = Math.floor(Date.now() / 1000);
+
             // Build initial embed showing horses and empty participant lists
             const buildRaceDescription = () => {
-                let desc = `Intermission: ${intermission} seconds — click Join to participate.`;
+                let desc = `Intermission: ${intermission} seconds — starts <t:${startUnix}:R>.`;
                 desc += '\n\n';
+                desc += '```';
                 for (const h of HORSES) {
-                    desc += `**${h.label} (${h.ratio}x)**\n`;
+                    const odds = `1:${h.ratio.toFixed(1)}`;
+                    desc += `${h.label} | Odds: ${odds} | ${h.ratio.toFixed(1)}x\n`;
+                }
+                desc += '```\n\n';
+
+                for (const h of HORSES) {
+                    desc += `**${h.label}**\n`;
                     const list = Array.from(participants.values())
                         .filter(p => p.horseId === h.id)
                         .map(p => `${p.userTag} — ${formatBalance(p.bet)}`)
@@ -65,14 +74,13 @@ module.exports = {
 
             const joinButton = new ButtonBuilder().setCustomId('race_join').setLabel('Join Race').setStyle(ButtonStyle.Primary);
             const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
-            const abortButton = new ButtonBuilder().setCustomId('race_abort').setLabel('Abort (host)').setStyle(ButtonStyle.Danger);
 
-            const row = new ActionRowBuilder().addComponents(joinButton, leaveButton, abortButton);
+            const row = new ActionRowBuilder().addComponents(joinButton, leaveButton);
 
             await interaction.reply({ embeds: [embed], components: [row] });
             const mainMessage = await interaction.fetchReply();
 
-            // Collector listens to join/leave/abort presses during intermission
+            // Collector listens to join/leave presses during intermission
             const collector = mainMessage.createMessageComponentCollector({ componentType: ComponentType.Button, time: intermission * 1000 });
 
             // Helper to edit main embed
@@ -90,73 +98,101 @@ module.exports = {
                             return i.reply({ content: 'You are already in the race.', flags: MessageFlags.Ephemeral });
                         }
 
-                        // Show ephemeral selection UI: horse select, bet select, abort
-                        const horseOptions = HORSES.map(h => ({ label: `${h.label} — ${h.ratio}x`, value: `${h.id}|${h.ratio}` }));
+                        const profile = await db.getUser(i.user.id);
+                        const balance = profile ? profile.balance : 0;
 
-                        // Build bet options but mark unaffordable later — we will filter on confirm
-                        const betOptions = BET_OPTIONS.map(b => ({ label: `${b}`, value: `${b}` }));
+                        const horseLines = HORSES.map(h => `Horse ${h.id}: ${h.label} | Odds 1:${h.ratio.toFixed(1)} | ${h.ratio.toFixed(1)}x`).join('\n');
+                        const selectionEmbed = new EmbedBuilder()
+                            .setAuthor(buildAuthor(i))
+                            .setTitle('Join the Race')
+                            .setDescription(`Choose a horse and stake amount to join the race.\n\n\`\`\`\n${horseLines}\n\`\`\``)
+                            .setColor(Colors.YELLOW)
+                            .setTimestamp()
+                            .setFooter({ text: 'Gamble Bot' });
 
-                        const horseSelect = new StringSelectMenuBuilder()
-                            .setCustomId('race_select_horse')
-                            .setPlaceholder('Choose your horse')
-                            .setOptions(horseOptions);
+                        const horseButtons = new ActionRowBuilder().addComponents(
+                            ...HORSES.map(h => new ButtonBuilder()
+                                .setCustomId(`race_pick_horse_${h.id}`)
+                                .setLabel(`Horse ${h.id}`)
+                                .setStyle(ButtonStyle.Primary))
+                        );
 
-                        const betSelect = new StringSelectMenuBuilder()
-                            .setCustomId('race_select_bet')
-                            .setPlaceholder('Choose your bet')
-                            .setOptions(betOptions);
+                        const betButtons = new ActionRowBuilder().addComponents(
+                            ...BET_OPTIONS.map(b => new ButtonBuilder()
+                                .setCustomId(`race_pick_bet_${b}`)
+                                .setLabel(`${b}`)
+                                .setStyle(ButtonStyle.Secondary)
+                                .setDisabled(b > balance))
+                        );
 
-                        const abort = new ButtonBuilder().setCustomId('race_join_abort').setLabel('Abort').setStyle(ButtonStyle.Danger);
+                        const abortButton = new ActionRowBuilder().addComponents(
+                            new ButtonBuilder().setCustomId('race_join_abort').setLabel('Abort').setStyle(ButtonStyle.Danger)
+                        );
 
-                        await i.reply({ content: 'Choose your horse and bet (this message is ephemeral).', components: [new ActionRowBuilder().addComponents(horseSelect), new ActionRowBuilder().addComponents(betSelect), new ActionRowBuilder().addComponents(abort)], ephemeral: true });
+                        await i.reply({ embeds: [selectionEmbed], components: [horseButtons, betButtons, abortButton], ephemeral: true });
                         const joinMsg = await i.fetchReply();
 
                         let chosenHorse = null;
                         let chosenBet = null;
+                        let joined = false;
 
-                        const joinCollector = joinMsg.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: 60_000 });
+                        const joinCollector = joinMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60_000 });
 
-                        joinCollector.on('collect', async (sel) => {
-                            if (sel.user.id !== i.user.id) return sel.reply({ embeds: [createIlligalInteractionEmbed()], flags: MessageFlags.Ephemeral });
+                        const updateSelectionEmbed = async (description) => {
+                            const updatedEmbed = EmbedBuilder.from(selectionEmbed).setDescription(`${horseLines}\n\n${description}`);
+                            await joinMsg.edit({ embeds: [updatedEmbed] });
+                        };
 
-                            if (sel.customId === 'race_select_horse') {
-                                const [id, ratio] = sel.values[0].split('|');
-                                chosenHorse = { id: Number(id), ratio: Number(ratio) };
-                                await sel.reply({ content: `Horse ${chosenHorse.id} selected (${chosenHorse.ratio}x). Now pick a bet.`, flags: MessageFlags.Ephemeral });
+                        joinCollector.on('collect', async (btn) => {
+                            if (btn.user.id !== i.user.id) return btn.reply({ embeds: [createIlligalInteractionEmbed()], flags: MessageFlags.Ephemeral });
+
+                            if (btn.customId === 'race_join_abort') {
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':x: Join cancelled.').setColor(Colors.RED).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                return joinCollector.stop('aborted');
                             }
 
-                            if (sel.customId === 'race_select_bet') {
-                                chosenBet = Number(sel.values[0]);
-                                // Check balance right before finalizing
-                                const profile = await db.getUser(i.user.id);
-                                if (!profile || profile.balance < chosenBet) {
-                                    await sel.reply({ embeds: [await createInsufficientMoneyEmbed(i, chosenBet)], flags: MessageFlags.Ephemeral });
-                                    return joinCollector.stop('insufficient');
+                            if (btn.customId.startsWith('race_pick_horse_')) {
+                                chosenHorse = HORSES.find(h => btn.customId.endsWith(`_${h.id}`));
+                                await btn.update({ embeds: [EmbedBuilder.from(selectionEmbed).setDescription(`${horseLines}\n\nSelected horse: ${chosenHorse.label} (${chosenHorse.ratio.toFixed(1)}x)\nNow choose a bet.`)], components: [horseButtons, betButtons, abortButton] });
+                                return;
+                            }
+
+                            if (btn.customId.startsWith('race_pick_bet_')) {
+                                if (!chosenHorse) {
+                                    await btn.update({ embeds: [EmbedBuilder.from(selectionEmbed).setDescription(`${horseLines}\n\nSelect a horse first.`)], components: [horseButtons, betButtons, abortButton] });
+                                    return;
                                 }
 
-                                // All selections done: add to participants
+                                chosenBet = Number(btn.customId.split('_').pop());
+                                const currentProfile = await db.getUser(i.user.id);
+                                if (!currentProfile || currentProfile.balance < chosenBet) {
+                                    await btn.update({ embeds: [await createInsufficientMoneyEmbed(i, chosenBet)], components: [horseButtons, betButtons, abortButton] });
+                                    return;
+                                }
+
                                 participants.set(i.user.id, { userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
-                                await sel.reply({ content: `You joined the race: Horse ${chosenHorse.id} for ${formatBalance(chosenBet)}.`, flags: MessageFlags.Ephemeral });
+                                joined = true;
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(`:white_check_mark: You joined the race with Horse ${chosenHorse.id} paying ${chosenHorse.ratio.toFixed(1)}x for ${formatBalance(chosenBet)}.`).setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 await refreshMainEmbed();
-                                joinCollector.stop('joined');
+                                return joinCollector.stop('joined');
                             }
                         });
 
                         joinCollector.on('end', async (_, reason) => {
-                            if (reason === 'insufficient') {
-                                // nothing else to do
+                            if (!joined && reason === 'time') {
+                                await joinMsg.edit({ embeds: [createTimedOutEmbed(i)], components: [] });
                             }
                         });
 
                     } else if (i.customId === 'race_leave') {
                         if (!participants.has(i.user.id)) {
-                            return i.reply({ content: 'You are not in the race.', flags: MessageFlags.Ephemeral });
+                            return i.reply({ embeds: [new EmbedBuilder().setDescription(':information_source: You are not in the race.').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], flags: MessageFlags.Ephemeral });
                         }
 
                         // Ask for confirmation
                         const confirm = new ButtonBuilder().setCustomId('race_leave_confirm').setLabel('Confirm Leave').setStyle(ButtonStyle.Danger);
                         const cancel = new ButtonBuilder().setCustomId('race_leave_cancel').setLabel('Cancel').setStyle(ButtonStyle.Secondary);
-                        await i.reply({ content: 'Are you sure you want to leave the race?', components: [new ActionRowBuilder().addComponents(confirm, cancel)], ephemeral: true });
+                        await i.reply({ embeds: [new EmbedBuilder().setDescription('Are you sure you want to leave the race?').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [new ActionRowBuilder().addComponents(confirm, cancel)], ephemeral: true });
                         const leaveMsg = await i.fetchReply();
 
                         const leaveCollector = leaveMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 30_000 });
@@ -166,23 +202,15 @@ module.exports = {
 
                             if (btn.customId === 'race_leave_confirm') {
                                 participants.delete(i.user.id);
-                                await btn.reply({ content: 'You have left the race.', flags: MessageFlags.Ephemeral });
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':white_check_mark: You have left the race.').setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 await refreshMainEmbed();
                                 leaveCollector.stop('left');
                             } else {
-                                await btn.reply({ content: 'Leave cancelled.', flags: MessageFlags.Ephemeral });
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':information_source: Leave cancelled.').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 leaveCollector.stop('cancelled');
                             }
                         });
 
-                    } else if (i.customId === 'race_abort') {
-                        // Only the command user (host) can abort — check equality
-                        if (i.user.id !== interaction.user.id) {
-                            return i.reply({ content: 'Only the host can abort this race.', flags: MessageFlags.Ephemeral });
-                        }
-
-                        collector.stop('aborted');
-                        await i.reply({ content: 'Race aborted by host.', flags: MessageFlags.Ephemeral });
                     }
                 } catch (err) {
                     handleInteractionError(i, err);
@@ -193,11 +221,15 @@ module.exports = {
                 // Remove buttons from main message
                 await interaction.editReply({ components: [] });
 
-                if (reason === 'aborted') {
-                    // Inform channel that race was aborted
-                    embed.setDescription('Race was aborted by the host.');
-                    embed.setColor(Colors.RED);
-                    return await interaction.editReply({ embeds: [embed] });
+                if (participants.size === 0) {
+                    const noParticipantsEmbed = new EmbedBuilder()
+                        .setTitle(':x: No participants')
+                        .setDescription('The race started with no participants and has been cancelled.')
+                        .setColor(Colors.RED)
+                        .setTimestamp()
+                        .setFooter({ text: 'Gamble Bot' });
+
+                    return await interaction.editReply({ embeds: [noParticipantsEmbed], components: [] });
                 }
 
                 // Start the race
@@ -234,7 +266,48 @@ module.exports = {
                 // Race finished, determine winners and pay out
                 const winningHorse = HORSES[winnerIndex];
 
-                // Build leaderboard embed
+                const winners = [];
+                const losers = [];
+                const participantResults = [];
+
+                for (const [userId, p] of participants.entries()) {
+                    const profile = await db.getUser(userId);
+                    if (!profile) continue;
+
+                    let profit = 0;
+                    let newBalance = profile.balance;
+                    let resultType = 'lose';
+
+                    if (profile.balance < p.bet) {
+                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, note: 'Insufficient funds' });
+                        profit = 0;
+                        newBalance = profile.balance;
+                    } else if (p.horseId === winningHorse.id) {
+                        const payout = Math.floor(p.bet * p.ratio);
+                        profit = payout - p.bet;
+                        newBalance = profile.balance + profit;
+                        await db.recordGamePlay(userId, p.bet, payout);
+
+                        const stats = await db.getRaceStats(userId);
+                        const currentStreak = stats ? (stats.current_win_streak || 0) : 0;
+                        await db.setRaceStats(userId, 1, currentStreak + 1);
+
+                        winners.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance });
+                        resultType = 'win';
+                    } else {
+                        profit = -p.bet;
+                        newBalance = profile.balance - p.bet;
+                        await db.recordGamePlay(userId, p.bet, 0);
+
+                        const stats = await db.getRaceStats(userId);
+                        await db.setRaceStats(userId, 0, 0);
+
+                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance });
+                    }
+
+                    participantResults.push({ userId, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance, resultType });
+                }
+
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
                     .setDescription(`Winner: ${winningHorse.label} (${winningHorse.ratio}x)`)
@@ -242,57 +315,50 @@ module.exports = {
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
 
-                const winners = [];
-                const losers = [];
+                const winnerField = winners.length
+                    ? { name: 'Winners', value: winners.map(w => `${w.userTag}
+                        Stake: ${formatBalance(w.stake)}
+                        Horse Bet: ${w.horse}
+                        Winner: ${winningHorse.id}
+                        Profit: ${formatBalance(w.profit, true)}
+                        New Balance: ${formatBalance(w.newBalance)}`).join('\n\n') }
+                    : { name: 'Winners', value: 'No winners this race.' };
 
-                for (const [userId, p] of participants.entries()) {
-                    // Check user's current balance before settlement
-                    const profile = await db.getUser(userId);
-                    if (!profile) continue;
+                const loserField = losers.length
+                    ? { name: 'Losers', value: losers.map(l => `${l.userTag}
+                        Stake: ${formatBalance(l.stake)}
+                        Horse Bet: ${l.horse}
+                        Winner: ${winningHorse.id}
+                        Profit: ${formatBalance(l.profit, true)}
+                        New Balance: ${formatBalance(l.newBalance)}`).join('\n\n') }
+                    : { name: 'Losers', value: 'No losers this race.' };
 
-                    if (profile.balance < p.bet) {
-                        // Insufficient funds at settlement — skip
-                        losers.push({ userTag: p.userTag, bet: p.bet, note: 'Insufficient funds' });
-                        continue;
-                    }
-
-                    if (p.horseId === winningHorse.id) {
-                        const payout = Math.floor(p.bet * p.ratio);
-                        await db.recordGamePlay(userId, p.bet, payout);
-
-                        // update race stats
-                        const stats = await db.getRaceStats(userId);
-                        const currentStreak = stats ? (stats.current_win_streak || 0) : 0;
-                        await db.setRaceStats(userId, 1, currentStreak + 1);
-
-                        winners.push({ userTag: p.userTag, bet: p.bet, payout });
-                    } else {
-                        await db.recordGamePlay(userId, p.bet, 0);
-
-                        const stats = await db.getRaceStats(userId);
-                        const currentStreak = stats ? (stats.current_win_streak || 0) : 0;
-                        await db.setRaceStats(userId, 0, 0);
-
-                        losers.push({ userTag: p.userTag, bet: p.bet });
-                    }
-                }
-
-                let resultDesc = `**Winner: ${winningHorse.label} (${winningHorse.ratio}x)**\n\n`;
-                if (winners.length) {
-                    resultDesc += '**Winners**\n';
-                    for (const w of winners) resultDesc += `${w.userTag} — Bet ${formatBalance(w.bet)} → Payout ${formatBalance(w.payout)}\n`;
-                    resultDesc += '\n';
-                }
-
-                if (losers.length) {
-                    resultDesc += '**Losers**\n';
-                    for (const l of losers) resultDesc += `${l.userTag} — Bet ${formatBalance(l.bet)}${l.note ? ` (${l.note})` : ''}\n`;
-                }
-
-                resultEmbed.setDescription(resultDesc);
+                resultEmbed.addFields(winnerField, loserField);
                 await interaction.editReply({ embeds: [resultEmbed], components: [] });
-            });
 
+                for (const result of participantResults) {
+                    try {
+                        const user = await interaction.client.users.fetch(result.userId);
+                        const dmEmbed = new EmbedBuilder()
+                            .setTitle(':horse_racing: Race Result')
+                            .setDescription(`The race is over. Here are your results.`)
+                            .addFields(
+                                { name: 'Stake', value: formatBalance(result.stake), inline: true },
+                                { name: 'Horse Bet', value: `Horse ${result.horse}`, inline: true },
+                                { name: 'Winning Horse', value: `Horse ${winningHorse.id}`, inline: true },
+                                { name: 'Profit', value: formatBalance(result.profit, true), inline: true },
+                                { name: 'New Balance', value: formatBalance(result.newBalance), inline: true }
+                            )
+                            .setColor(result.resultType === 'win' ? Colors.GREEN : Colors.RED)
+                            .setTimestamp()
+                            .setFooter({ text: 'Gamble Bot' });
+
+                        await user.send({ embeds: [dmEmbed] });
+                    } catch {
+                        // Ignore DM failures silently.
+                    }
+                }
+            });
         } catch (error) {
             handleInteractionError(interaction, error);
         }
