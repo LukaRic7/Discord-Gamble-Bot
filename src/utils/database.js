@@ -298,7 +298,8 @@ class DatabaseManager {
                 cr.highest_multiplier AS crash_highest_multiplier,
                 hl.longest_streak AS highlow_longest_streak,
                 m.bombs_hit AS mines_bombs_hit, m.diamonds_hit AS mines_diamonds_hit, m.perfect_games AS mines_perfect_games,
-                s.jackpots_hit AS slots_jackpots_hit, s.longest_win_streak AS slots_longest_win_streak
+                s.jackpots_hit AS slots_jackpots_hit, s.longest_win_streak AS slots_longest_win_streak,
+                pl.total_edge_hits AS plinko_total_edge_hits
             FROM player_profiles p
             LEFT JOIN game_blackjack b ON p.user_id = b.user_id
             LEFT JOIN game_chests c ON p.user_id = c.user_id
@@ -307,6 +308,7 @@ class DatabaseManager {
             LEFT JOIN game_highlow hl ON p.user_id = hl.user_id
             LEFT JOIN game_mines m ON p.user_id = m.user_id
             LEFT JOIN game_slots s ON p.user_id = s.user_id
+            LEFT JOIN game_plinko pl ON p.user_id = pl.user_id
             WHERE p.user_id = ?
         `;
     
