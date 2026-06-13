@@ -42,7 +42,10 @@ class DatabaseManager {
                 total_games_played INT          DEFAULT 0,
                 created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
                 total_payed        BIGINT       DEFAULT 0,
-                total_received     BIGINT       DEFAULT 0
+                total_received     BIGINT       DEFAULT 0,
+                total_dailys       INT          DEFAULT 0,
+                total_works        INT          DEFAULT 0,
+                total_from_claims  BIGINT       DEFAULT 0
             );
     
             CREATE TABLE IF NOT EXISTS game_slots (
@@ -170,15 +173,16 @@ class DatabaseManager {
     /**
      * Retrieves the daily reward metadata for a user.
      * @param {string} userId - The Discord user ID.
-     * @returns {Promise<Object>} The user's daily streak and last claim timestamp.
+     * @returns {Promise<Object>} The user's daily streak, total dailys and last claim timestamp.
      */
     async getDailyData(userId) {
         await this.ensureUser(userId);
     
-        return await this.db.get(
-            `SELECT daily_streak, last_daily_claim FROM player_profiles WHERE user_id = ?`,
-            [userId]
-        );
+        return await this.db.get(`
+            SELECT daily_streak, last_daily_claim, total_dailys
+            FROM player_profiles
+            WHERE user_id = ?
+            `, [userId]);
     }
 
     /**
@@ -196,9 +200,11 @@ class DatabaseManager {
             SET 
                 last_daily_claim = CURRENT_TIMESTAMP,
                 balance = balance + ?,
-                daily_streak = ?
+                total_from_claims = total_from_claims + ?,
+                daily_streak = ?,
+                total_dailys = total_dailys + 1
             WHERE user_id = ?
-        `, [reward, newStreak, userId]);
+        `, [reward, reward, newStreak, userId]);
     
         return await this.getUser(userId);
     }
@@ -206,13 +212,13 @@ class DatabaseManager {
     /**
      * Retrieves the work reward metadata for a user.
      * @param {string} userId - The Discord user ID.
-     * @returns {Promise<Object>} The user's work streak and last claim timestamp.
+     * @returns {Promise<Object>} The user's total works and last claim timestamp.
      */
     async getWorkData(userId) {
         await this.ensureUser(userId);
 
         return await this.db.get(
-            `SELECT last_work_claim FROM player_profiles WHERE user_id = ?`,
+            `SELECT last_work_claim, total_works FROM player_profiles WHERE user_id = ?`,
             [userId]
         );
     }
@@ -230,9 +236,11 @@ class DatabaseManager {
             UPDATE player_profiles
             SET
                 last_work_claim = CURRENT_TIMESTAMP,
-                balance = balance + ?
+                balance = balance + ?,
+                total_from_claims = total_from_claims + ?,
+                total_works = total_works + 1
             WHERE user_id = ?
-        `, [reward, userId]);
+        `, [reward, reward, userId]);
 
         return await this.getUser(userId);
     }

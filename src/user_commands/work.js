@@ -51,7 +51,8 @@ module.exports = {
                 .setTitle(':credit_card: You Claimed Your Work Bonus!')
                 .setFields(
                     { name: 'Received', value: formatBalance(reward, true), inline: true },
-                    { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
+                    { name: 'Total Claims', value: `${data.total_works + 1}`, inline: true },
+                    { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                 )
                 .setColor(Colors.GREEN)
                 .setTimestamp()

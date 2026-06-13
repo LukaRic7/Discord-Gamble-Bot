@@ -68,8 +68,12 @@ module.exports = {
                         inline: true
                     },
                     {
-                        name: ':money_with_wings: Transactions',
-                        value: buildField(`Given: ${formatBalance(stats.total_payed || 0)}`, `Received: ${formatBalance(stats.total_received || 0)}`),
+                        name: ':money_with_wings: Transactions & Claims',
+                        value: buildField(
+                            `Given: ${formatBalance(stats.total_payed || 0)}`, `Received: ${formatBalance(stats.total_received || 0)}`,
+                            `From Claims: ${formatBalance(stats.total_from_claims || 0)}`, `Total Dailys: ${stats.total_dailys || 0}`,
+                            `Total Works: ${thousandSeperator.format(stats.total_works || 0)}`
+                        ),
                         inline: true
                     },
                     { name: '\u200B', value: '\u200B', inline: true }, // Spacer

@@ -73,6 +73,7 @@ module.exports = {
                 .setFields(
                     { name: 'Received', value: formatBalance(reward, true), inline: true },
                     { name: 'Streak', value: `:fire: ${streak}`, inline: true },
+                    { name: 'Total Claims', value: `${data.total_dailys + 1}`, inline: true },
                     { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                 )
                 .setColor(Colors.GREEN)
