@@ -111,7 +111,7 @@ module.exports = {
                         inline: true
                     },
                     {
-                        name: ':boom: War',
+                        name: ':crossed_swords: War',
                         value: buildField(`Kings Pulled: ${thousandSeperator.format(stats.war_kings_pulled || 0)}`, `Best Streak: ${stats.war_longest_win_streak || 0}`),
                         inline: true
                     },

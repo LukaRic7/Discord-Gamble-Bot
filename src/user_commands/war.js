@@ -38,63 +38,52 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        const stake = Math.floor(interaction.options.getNumber('stake'));
+        const stake = interaction.options.getNumber('stake');
         const db = interaction.client.db;
 
         try {
             const profile = await db.ensureUser(interaction.user.id);
+            
+            // Make sure the user has enough money
             if (profile.balance < stake) {
                 return await interaction.reply({ embeds: [await createInsufficientMoneyEmbed(interaction, stake)] });
             }
 
-            const loadingEmbed = new EmbedBuilder()
-                .setAuthor(buildAuthor(interaction))
-                .setTitle(':crossed_swords: War')
-                .setDescription('Drawing cards...')
-                .setColor(Colors.YELLOW)
-                .setTimestamp()
-                .setFooter({ text: 'Gamble Bot' });
-
-            await interaction.reply({ embeds: [loadingEmbed] });
-            await wait(700);
-
             let playerCard;
             let dealerCard;
-            let rounds = 0;
 
             do {
                 playerCard = drawCard();
                 dealerCard = drawCard();
-                rounds += 1;
             } while (playerCard.value === dealerCard.value);
 
+            // Update the database
             const playerWins = playerCard.value > dealerCard.value;
             const payout = playerWins ? stake * 2 : 0;
             const updatedProfile = await db.recordGamePlay(interaction.user.id, stake, payout);
-
             const warStats = await db.getWarStats(interaction.user.id);
             const currentStreak = warStats ? (warStats.current_win_streak ?? 0) : 0;
             const newStreak = playerWins ? currentStreak + 1 : 0;
             await db.setWarStats(interaction.user.id, playerWins ? 1 : 0, newStreak);
 
+            // Build the embed to show results
             const resultEmbed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setTitle(':crossed_swords: War Result')
                 .setDescription(playerWins ? ':trophy: You won!' : ':x: You lost!')
                 .addFields(
-                    { name: 'Your Card', value: `${playerCard.label} ${playerCard.name}`, inline: true },
-                    { name: 'Dealer Card', value: `${dealerCard.label} ${dealerCard.name}`, inline: true },
-                    { name: 'Rounds', value: `${rounds}`, inline: true },
+                    { name: 'Your Card', value: `${playerCard.label}`, inline: true },
+                    { name: 'Dealer Card', value: `${dealerCard.label}`, inline: true },
                     { name: 'Stake', value: formatBalance(stake), inline: true },
                     { name: 'Profit', value: formatBalance(playerWins ? stake : -stake, true), inline: true },
-                    { name: 'New Balance', value: formatBalance(updatedProfile.balance), inline: true },
-                    { name: 'Win Streak', value: `${newStreak}`, inline: true }
+                    { name: 'Win Streak', value: `:fire: ${newStreak}`, inline: true },
+                    { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                 )
                 .setColor(playerWins ? Colors.GREEN : Colors.RED)
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
 
-            await interaction.editReply({ embeds: [resultEmbed] });
+            await interaction.reply({ embeds: [resultEmbed] });
         } catch (error) {
             handleInteractionError(interaction, error);
         }
