@@ -46,7 +46,7 @@ module.exports = {
             let raceStarted = false;
 
             // Helper to edit main embed
-            const refreshMainEmbed = async () => {
+            const refreshMainEmbed = async (firstSend=false) => {
                 const fields = [];
                 for (const h of HORSES) {
                     fields.push({ name: `Horse ${h.id}`, value: `Odds: 1:${Math.round(h.ratio)}\n> *no bets yet*`, inline: false });
@@ -54,7 +54,12 @@ module.exports = {
 
                 embed.setDescription(`Race starts <t:${startUnix}:R>.`)
                     .setFields(...fields);
-                await interaction.editReply({ embeds: [embed] });
+                
+                if (firstSend) {
+                    await interaction.reply({ embeds: [embed] });
+                } else {
+                    await interaction.editReply({ embeds: [embed] });
+                }
             };
 
             const embed = new EmbedBuilder()
@@ -63,7 +68,7 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
             
-            await refreshMainEmbed();
+            await refreshMainEmbed(true);
 
             const joinButton = new ButtonBuilder().setCustomId('race_join').setLabel('Join Race').setStyle(ButtonStyle.Primary);
             const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
