@@ -5,7 +5,7 @@ const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
 // 6 rows means 7 possible landing buckets at the bottom.
 const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
-const ROW_COUNT = 7;
+const ROW_COUNT = 6;
 
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
@@ -96,7 +96,9 @@ module.exports = {
             // Animate the drops row by row
             for (let row = 1; row <= ROW_COUNT; row++) {
                 // Ball falls left (+0) or right (+1)
-                pos += Math.random() < 0.5 ? 0 : 1;
+                if (row < ROW_COUNT) {
+                    pos += Math.random() < 0.5 ? 0 : 1;
+                }
                 
                 const isGameOver = (row === ROW_COUNT);
                 
@@ -110,8 +112,8 @@ module.exports = {
 
             // Handle the payout outcome
             const finalMultiplier = MULTIPLIERS[pos];
-            const winnings = betAmount * finalMultiplier;
-            const profit = winnings - betAmount;
+            const payout = betAmount * finalMultiplier;
+            const profit = payout - betAmount;
             
             // Adjust to fit your exact database saving approach
             profile.balance += profit;
@@ -119,8 +121,8 @@ module.exports = {
             else if (db.saveUser) await db.saveUser(profile);
 
             embed.setFields(
-                { name: 'Profit', value: formatBalance(winnings, true), inline: true },
-                { name: 'New Balance': value: `:moneybag: ${formatBalance(profile.balance)}`, inline: true }
+                { name: 'Profit', value: formatBalance(payout - betAmount, true), inline: true },
+                { name: 'New Balance', value: `:moneybag: **${formatBalance(profile.balance)}**`, inline: true }
             )
             .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
             
