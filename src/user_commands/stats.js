@@ -121,12 +121,12 @@ module.exports = {
                         value: buildField(`Best Streak: ${stats.highlow_longest_streak || 0}`),
                         inline: true
                     },
-                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                     {
                         name: ':small_red_triangle: Plinko',
                         value: buildField(`Edges Hit: ${stats.plinko_total_edge_hits || 0}`),
                         inline: true
-                    }
+                    },
+                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                 )
                 .setColor(Colors.CORE)
                 .setTimestamp()
