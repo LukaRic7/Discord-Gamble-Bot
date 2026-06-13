@@ -75,7 +75,6 @@ module.exports = {
 
             const row = new ActionRowBuilder().addComponents(joinButton, leaveButton);
 
-            await interaction.reply({ embeds: [embed], components: [row] });
             const mainMessage = await interaction.fetchReply();
 
             // Collector listens to join/leave presses during intermission
