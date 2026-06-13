@@ -115,16 +115,18 @@ module.exports = {
             
             // Update the database
             const updatedProfile = await db.recordGamePlay(userId, betAmount, payout);
-            if (pos === 0 || pos === MULTIPLIERS.length - 1) {
+            const hitEdge = pos === 0 || pos === MULTIPLIERS.length - 1;
+            if (hitEdge) {
                 await db.setPlinkoStats(userId, 1); // Hit edge
             }
 
-            embed.setFields(
-                { name: 'Stake', value: formatBalance(betAmount), inline: true },
-                { name: 'Profit', value: formatBalance(payout - betAmount, true), inline: true },
-                { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
-            )
-            .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
+            embed.setTitle(hitEdge ? ':small_red_triangle: You Hit An Edge!' : (profit > 0 ? ':chart_with_upwards_trend: You Turned a Profit!' : ":chart_with_downwards_trend: Better Luck Next Time."))
+                .setFields(
+                    { name: 'Stake', value: formatBalance(betAmount), inline: true },
+                    { name: 'Profit', value: formatBalance(profit, true), inline: true },
+                    { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
+                )
+                .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
             
             await interaction.editReply({ embeds: [embed] });
 
