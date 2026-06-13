@@ -301,7 +301,7 @@ module.exports = {
                         { name: 'Wagered', value: formatBalance(totalWagered), inline: true },
                         { name: 'Profit', value: formatBalance(totalProfit), inline: true },
                         { name: 'Streak', value: `:fire: ${totalProfit > 0 ? stats.current_win_streak + 1 : 0}`, inline: true },
-                        { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false },
+                        { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true },
                     )
                     .setColor(totalProfit > 0 ? Colors.GREEN : Colors.RED)
                     .setTimestamp()
