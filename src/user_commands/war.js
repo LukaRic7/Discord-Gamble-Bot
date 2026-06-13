@@ -1,10 +1,27 @@
-const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags, ActionRowBuilder, ComponentType, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, InteractionContextType, EmbedBuilder } = require('discord.js');
 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
-const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
+const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
+
+const CARD_RANKS = [
+    { label: ':regional_indicator_a:', value: 1, name: 'A' },
+    { label: ':two:', value: 2, name: '2' },
+    { label: ':three:', value: 3, name: '3' },
+    { label: ':four:', value: 4, name: '4' },
+    { label: ':five:', value: 5, name: '5' },
+    { label: ':six:', value: 6, name: '6' },
+    { label: ':seven:', value: 7, name: '7' },
+    { label: ':eight:', value: 8, name: '8' },
+    { label: ':nine:', value: 9, name: '9' },
+    { label: ':keycap_ten:', value: 10, name: '10' },
+    { label: ':regional_indicator_j:', value: 11, name: 'J' },
+    { label: ':regional_indicator_q:', value: 12, name: 'Q' },
+    { label: ':regional_indicator_k:', value: 13, name: 'K' }
+];
+
+const drawCard = () => CARD_RANKS[Math.floor(Math.random() * CARD_RANKS.length)];
 
 module.exports = {
-    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('war')
         .setDescription('Pull a card against a dealer, highest card wins.')
@@ -19,19 +36,67 @@ module.exports = {
             InteractionContextType.BotDM,
             InteractionContextType.PrivateChannel
         ),
-    
-    // Callback for when the command is executed
+
     async execute(interaction) {
+        const stake = Math.floor(interaction.options.getNumber('stake'));
+        const db = interaction.client.db;
+
         try {
-            const embed = new EmbedBuilder()
-                .setDescription(':tools: This feature is under development!')
+            const profile = await db.ensureUser(interaction.user.id);
+            if (profile.balance < stake) {
+                return await interaction.reply({ embeds: [await createInsufficientMoneyEmbed(interaction, stake)] });
+            }
+
+            const loadingEmbed = new EmbedBuilder()
+                .setAuthor(buildAuthor(interaction))
+                .setTitle(':crossed_swords: War')
+                .setDescription('Drawing cards...')
                 .setColor(Colors.YELLOW)
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
-            
-            await interaction.reply({ embeds: [embed] });
+
+            await interaction.reply({ embeds: [loadingEmbed] });
+            await wait(700);
+
+            let playerCard;
+            let dealerCard;
+            let rounds = 0;
+
+            do {
+                playerCard = drawCard();
+                dealerCard = drawCard();
+                rounds += 1;
+            } while (playerCard.value === dealerCard.value);
+
+            const playerWins = playerCard.value > dealerCard.value;
+            const payout = playerWins ? stake * 2 : 0;
+            const updatedProfile = await db.recordGamePlay(interaction.user.id, stake, payout);
+
+            const warStats = await db.getWarStats(interaction.user.id);
+            const currentStreak = warStats ? (warStats.current_win_streak ?? 0) : 0;
+            const newStreak = playerWins ? currentStreak + 1 : 0;
+            await db.setWarStats(interaction.user.id, playerWins ? 1 : 0, newStreak);
+
+            const resultEmbed = new EmbedBuilder()
+                .setAuthor(buildAuthor(interaction))
+                .setTitle(':crossed_swords: War Result')
+                .setDescription(playerWins ? ':trophy: You won!' : ':x: You lost!')
+                .addFields(
+                    { name: 'Your Card', value: `${playerCard.label} ${playerCard.name}`, inline: true },
+                    { name: 'Dealer Card', value: `${dealerCard.label} ${dealerCard.name}`, inline: true },
+                    { name: 'Rounds', value: `${rounds}`, inline: true },
+                    { name: 'Stake', value: formatBalance(stake), inline: true },
+                    { name: 'Profit', value: formatBalance(playerWins ? stake : -stake, true), inline: true },
+                    { name: 'New Balance', value: formatBalance(updatedProfile.balance), inline: true },
+                    { name: 'Win Streak', value: `${newStreak}`, inline: true }
+                )
+                .setColor(playerWins ? Colors.GREEN : Colors.RED)
+                .setTimestamp()
+                .setFooter({ text: 'Gamble Bot' });
+
+            await interaction.editReply({ embeds: [resultEmbed] });
         } catch (error) {
             handleInteractionError(interaction, error);
         }
     }
-}
+};
