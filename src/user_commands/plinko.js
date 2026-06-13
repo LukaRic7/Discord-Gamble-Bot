@@ -10,9 +10,8 @@ const ROW_COUNT = 7;
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
 
-    // 1. Build the 6 rows of the pyramid
+    // Build the rows of the pyramid
     for (let i = 0; i < ROW_COUNT; i++) {
-        // 24 spaces perfectly centers the top peg relative to the 7 buckets below
         let padding = ' '.repeat(21 - i * 3);
         let pegs = [];
 
@@ -27,21 +26,19 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
         rows.push(padding + pegs.join('     '));
     }
 
-    // 2. Format the Multiplier Buckets (Centered to exactly 6 characters each)
+    // Format the Multiplier Buckets (Centered to exactly 6 characters each)
     const multStrings = MULTIPLIERS.map(m => {
         return ` ${m.toFixed(1)} `;
     });
     
     rows.push(`|${multStrings.join('|')}|`);
 
-    // 3. Drop the ball into the specific bucket when the game ends
-    if (gameOver) {
-        const ballRow = MULTIPLIERS.map((_, i) => {
-            return i === currentPosition ? '\\ ● /' : '\\   /';
-        });
-        // 1 space prefix aligns the drop slots perfectly with the '|' dividers
-        rows.push(' ' + ballRow.join(' '));
-    }
+    // Drop the ball into the specific bucket when the game ends
+    const ballRow = MULTIPLIERS.map((_, i) => {
+        return i === currentPosition && gameOver ? '\\ ● /' : '\\   /';
+    });
+    // 1 space prefix aligns the drop slots perfectly with the '|' dividers
+    rows.push(' ' + ballRow.join(' '));
 
     return rows.join('\n');
 }
@@ -121,13 +118,12 @@ module.exports = {
             if (typeof profile.save === 'function') await profile.save();
             else if (db.saveUser) await db.saveUser(profile);
 
-            embed.addFields(
-                { name: 'Multiplier', value: `${finalMultiplier}x`, inline: true },
-                { name: 'Payout', value: formatBalance(winnings), inline: true }
-            );
+            embed.setFields(
+                { name: 'Profit', value: formatBalance(winnings, true), inline: true },
+                { name: 'New Balance': value: `:moneybag: ${formatBalance(profile.balance)}`, inline: true }
+            )
+            .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
             
-            // Turn embed Green for profit, Yellow for breaking even, Red for loss
-            embed.setColor(profit > 0 ? Colors.GREEN : (profit === 0 ? Colors.YELLOW : Colors.RED));
             await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
