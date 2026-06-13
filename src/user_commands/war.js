@@ -29,7 +29,7 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
             
-            await interaction.reply({ embeds: [embed], components: [row] });
+            await interaction.reply({ embeds: [embed] });
         } catch (error) {
             handleInteractionError(interaction, error);
         }
