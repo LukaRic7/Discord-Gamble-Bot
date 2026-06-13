@@ -104,7 +104,7 @@ module.exports = {
             .setDescription('Amount to bet.')
             .setRequired(true)
             .setMinValue(250)
-            .setMaxValue(3000)
+            .setMaxValue(2500)
         )
         .addNumberOption((option) => option
             .setName('num_mines')
