@@ -48,7 +48,11 @@ module.exports = {
             const buildHorseFields = () => {
                 const fields = [];
                 for (const h of HORSES) {
-                    fields.push({ name: `Horse ${h.id}`, value: `-# Odds: 1:${Math.round(h.ratio)}\n> *no bets yet*`, inline: false });
+                    const userIds = [...participants]
+                        .filter(([_, data]) => data.horseId === h.id)
+                        .map(([userId]) => `> <@${userId}>`).join('\n');
+
+                    fields.push({ name: `Horse ${h.id}`, value: `-# Odds: 1:${Math.round(h.ratio)}\n${userIds ? userIds : '> *no bets yet*'}`, inline: false });
                 }
 
                 return fields;
@@ -145,7 +149,7 @@ module.exports = {
                         const updateSelectionEmbed = async (btnInteraction) => {
                             const updatedEmbed = EmbedBuilder.from(selectionEmbed).setFields(
                                 { name: 'Horse', value: chosenHorse ? `Horse ${chosenHorse.id}` : '*None*', inline: true },
-                                { name: 'Stake', value: chosenBet ? String(chosenBet) : '*None*', inline: true }
+                                { name: 'Stake', value: chosenBet ? formatBalance(chosenBet) : '*None*', inline: true }
                             );
                             await btnInteraction.update({ embeds: [updatedEmbed] });
                         };
@@ -177,7 +181,7 @@ module.exports = {
                             if (chosenHorse && chosenBet) {
                                 participants.set(i.user.id, { userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
                                 joined = true;
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(`:white_check_mark: You joined the race with Horse ${chosenHorse.id} paying ${formatBalance(chosenBet)}.`).setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                await btn.update({ embeds: [new EmbedBuilder().setDescription(`:white_check_mark: You joined the race with :racehorse: **Horse ${chosenHorse.id}** paying :money_with_wings: **${formatBalance(chosenBet)}**.`).setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
                                 await refreshMainEmbed();
                                 return joinCollector.stop('joined');
                             } else {
