@@ -3,15 +3,13 @@ const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags,
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
 const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed, createTimedOutEmbed } = require('../utils/standard_embeds.js');
 
-// Horses configuration: label and payout ratio
+// Horses configuration
 const HORSES = [
-    { id: 1, label: '┌1┬►', ratio: 2.0 },
-    { id: 2, label: '┌2┬►', ratio: 3.0 },
-    { id: 3, label: '┌3┬►', ratio: 4.0 },
-    { id: 4, label: '┌4┬►', ratio: 5.0 },
-    { id: 5, label: '┌5┬►', ratio: 6.0 }
+    { id: 1, ratio: 2.0 }, { id: 2, ratio: 3.0 }, { id: 3, ratio: 4.0 },
+    { id: 4, ratio: 5.0 }, { id: 5, ratio: 6.0 }
 ];
 
+// Bet options the user can choose from
 const BET_OPTIONS = [100, 250, 500, 1000, 2500];
 
 module.exports = {
@@ -33,12 +31,11 @@ module.exports = {
 
     // Callback for when the command is executed
     async execute(interaction) {
+        const intermission = interaction.options.getNumber('intermission_duration');
         const db = interaction.client.db;
 
         // Participants map: userId -> { userTag, horseId, ratio, bet }
         const participants = new Map();
-
-        const intermission = interaction.options.getNumber('intermission_duration');
 
         try {
             const startUnix = Math.floor(Date.now() / 1000) + intermission;
@@ -46,9 +43,11 @@ module.exports = {
             let raceStarted = false;
             const raceOwnerAuthor = buildAuthor(interaction);
 
+            // Build the horse fields
             const buildHorseFields = () => {
                 const fields = [];
                 for (const h of HORSES) {
+                    // Grab users that voted for that horse
                     const userIds = [...participants]
                         .filter(([_, data]) => data.horseId === h.id)
                         .map(([userId]) => `> <@${userId}>`).join('\n');
@@ -67,6 +66,7 @@ module.exports = {
                 await interaction.editReply({ embeds: [embed] });
             };
 
+            // Build the initial embed showcasing horses and their stats
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(`Race starts <t:${startUnix}:R>.`)
@@ -75,18 +75,18 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
 
+            // Join/Leave button row
             const joinButton = new ButtonBuilder().setCustomId('race_join').setLabel('Join Race').setStyle(ButtonStyle.Primary);
             const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
-
             const row = new ActionRowBuilder().addComponents(joinButton, leaveButton);
             
             await interaction.reply({ embeds: [embed], components: [row] });
-
             const mainMessage = await interaction.fetchReply();
 
             // Collector listens to join/leave presses during intermission
             const collector = mainMessage.createMessageComponentCollector({ componentType: ComponentType.Button, time: intermission * 1000 });
 
+            // Called when a user joins or leaves the race
             collector.on('collect', async (i) => {
                 try {
                     // Only allow valid interactions
@@ -104,7 +104,7 @@ module.exports = {
 
                         const profile = await db.ensureUser(i.user.id);
 
-                        const horseLines = HORSES.map(h => `Horse ${h.id}: ${h.label} | Odds 1:${h.ratio.toFixed(1)} | ${h.ratio.toFixed(1)}x`).join('\n');
+                        // Build the embed for the horse and bet selector
                         const selectionEmbed = new EmbedBuilder()
                             .setAuthor(buildAuthor(i))
                             .setTitle(':racehorse: Join the Race')
@@ -116,7 +116,8 @@ module.exports = {
                             .setColor(Colors.YELLOW)
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
-
+                        
+                        // Button to choose a horse
                         const horseButtons = new ActionRowBuilder().addComponents(
                             ...HORSES.map(h => new ButtonBuilder()
                                 .setCustomId(`race_pick_horse_${h.id}`)
@@ -124,6 +125,7 @@ module.exports = {
                                 .setStyle(ButtonStyle.Primary))
                         );
 
+                        // Button to choose a bet
                         const betButtons = new ActionRowBuilder().addComponents(
                             ...BET_OPTIONS.map(b => new ButtonBuilder()
                                 .setCustomId(`race_pick_bet_${b}`)
@@ -136,7 +138,6 @@ module.exports = {
                             new ButtonBuilder().setCustomId('race_join_abort').setLabel('Abort').setStyle(ButtonStyle.Danger)
                         );
 
-                        // FIX: Use flags: MessageFlags.Ephemeral instead of ephemeral: true
                         await i.reply({ embeds: [selectionEmbed], components: [horseButtons, betButtons, abortButton], flags: MessageFlags.Ephemeral });
                         const joinMsg = await i.fetchReply();
 
@@ -144,9 +145,10 @@ module.exports = {
                         let chosenBet = null;
                         let joined = false;
 
+                        // Listen for what the user selects
                         const joinCollector = joinMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
 
-                        // FIX: Update using the button interaction, and format the chosenHorse/Bet variables correctly
+                        // Update using the button interaction, and format the chosenHorse and chosenBet
                         const updateSelectionEmbed = async (btnInteraction) => {
                             const updatedEmbed = EmbedBuilder.from(selectionEmbed).setFields(
                                 { name: 'Horse', value: chosenHorse ? `Horse ${chosenHorse.id}` : '*None*', inline: true },
@@ -155,18 +157,29 @@ module.exports = {
                             await btnInteraction.update({ embeds: [updatedEmbed] });
                         };
 
+                        // Called when a user selects a horse, bet or aborts the joining
                         joinCollector.on('collect', async (btn) => {
                             if (btn.user.id !== i.user.id) return btn.reply({ embeds: [createIlligalInteractionEmbed()], flags: MessageFlags.Ephemeral });
 
+                            // Timeout if the race is started
                             if (raceStarted) {
                                 return joinCollector.stop('time');
                             }
 
+                            // Abort joining the race
                             if (btn.customId === 'race_join_abort') {
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':white_check_mark: You aborted joining the race.').setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                // Build the feedback embed
+                                const embed = new EmbedBuilder()
+                                    .setDescription(':white_check_mark: You aborted joining the race.')
+                                    .setColor(Colors.GREEN)
+                                    .setTimestamp()
+                                    .setFooter({ text: 'Gamble Bot' });
+                                
+                                await btn.update({ embeds: [embed], components: [] });
                                 return joinCollector.stop('aborted');
                             }
 
+                            // Pick a horse or bet
                             if (btn.customId.startsWith('race_pick_horse_')) {
                                 chosenHorse = HORSES.find(h => btn.customId.endsWith(`_${h.id}`));
                             } else if (btn.customId.startsWith('race_pick_bet_')) {                                
@@ -178,11 +191,23 @@ module.exports = {
                                 }
                             }
 
-                            // FIX: Check if both are ready, if not, just update the embed safely.
+                            // Check if both are ready, if not, just update the embed safely.
                             if (chosenHorse && chosenBet) {
                                 participants.set(i.user.id, { userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
                                 joined = true;
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(`:white_check_mark: You joined the race with :racehorse: **Horse ${chosenHorse.id}** paying :money_with_wings: **${formatBalance(chosenBet)}**.`).setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+
+                                // Build the embed to show the user what they picked
+                                const embed = new EmbedBuilder()
+                                    .setDescription(`:white_check_mark: You joined the race.`)
+                                    .setFields(
+                                        { name: 'Horse', value: `:racehorse: Horse ${chosenHorse.id}`, inline: true },
+                                        { name: 'Stake', value: formatBalance(chosenBet), inline: true }
+                                    )
+                                    .setColor(Colors.GREEN)
+                                    .setTimestamp()
+                                    .setFooter({ text: 'Gamble Bot' });
+
+                                await btn.update({ embeds: [embed], components: [] });
                                 await refreshMainEmbed();
                                 return joinCollector.stop('joined');
                             } else {
@@ -190,21 +215,42 @@ module.exports = {
                             }
                         });
 
+                        // Called when the embed times out without the user joining
                         joinCollector.on('end', async (_, reason) => {
                             if (!joined && reason === 'time') {
-                                // FIX: Use i.editReply to safely edit the ephemeral parent interaction
                                 await i.editReply({ embeds: [createTimedOutEmbed(i)], components: [] });
                             }
                         });
                     } else if (i.customId === 'race_leave') {
+                        // Make sure the user is in the race to leave it
                         if (!participants.has(i.user.id)) {
-                            return i.reply({ embeds: [new EmbedBuilder().setDescription(':x: You are not in the race.').setColor(Colors.RED).setTimestamp().setFooter({ text: 'Gamble Bot' })], flags: MessageFlags.Ephemeral });
+                            const embed = new EmbedBuilder()
+                                .setDescription(':x: You are not in the race.')
+                                .setColor(Colors.RED)
+                                .setTimestamp()
+                                .setFooter({ text: 'Gamble Bot' });
+
+                            return i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                         }
 
                         // Ask for confirmation
-                        const confirm = new ButtonBuilder().setCustomId('race_leave_confirm').setLabel('Confirm Leave').setStyle(ButtonStyle.Danger);
-                        const cancel = new ButtonBuilder().setCustomId('race_leave_cancel').setLabel('Cancel').setStyle(ButtonStyle.Secondary);
-                        await i.reply({ embeds: [new EmbedBuilder().setDescription('Are you sure you want to leave the race?').setColor(Colors.YELLOW).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [new ActionRowBuilder().addComponents(confirm, cancel)], ephemeral: true });
+                        const confirm = new ButtonBuilder()
+                            .setCustomId('race_leave_confirm')
+                            .setLabel('Confirm Leave')
+                            .setStyle(ButtonStyle.Danger);
+
+                        const cancel = new ButtonBuilder()
+                            .setCustomId('race_leave_cancel')
+                            .setLabel('Cancel')
+                            .setStyle(ButtonStyle.Secondary);
+
+                        const embed = new EmbedBuilder()
+                            .setDescription('Are you sure you want to leave the race?')
+                            .setColor(Colors.YELLOW)
+                            .setTimestamp()
+                            .setFooter({ text: 'Gamble Bot' });
+
+                        await i.reply({ embeds: [embed], components: [new ActionRowBuilder().addComponents(confirm, cancel)], ephemeral: true });
                         const leaveMsg = await i.fetchReply();
 
                         const leaveCollector = leaveMsg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 30_000 });
@@ -214,27 +260,40 @@ module.exports = {
 
                             if (btn.customId === 'race_leave_confirm') {
                                 participants.delete(i.user.id);
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':white_check_mark: You have left the race.').setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                const embed = new EmbedBuilder()
+                                    .setDescription(':white_check_mark: You have left the race.')
+                                    .setColor(Colors.GREEN)
+                                    .setTimestamp()
+                                    .setFooter({ text: 'Gamble Bot' });
+
+                                await btn.update({ embeds: [embed], components: [] });
                                 await refreshMainEmbed();
                                 leaveCollector.stop('left');
                             } else {
-                                await btn.update({ embeds: [new EmbedBuilder().setDescription(':x: Leave cancelled.').setColor(Colors.GREEN).setTimestamp().setFooter({ text: 'Gamble Bot' })], components: [] });
+                                const embed = new EmbedBuilder()
+                                    .setDescription(':x: Leave cancelled.')
+                                    .setColor(Colors.GREEN)
+                                    .setTimestamp()
+                                    .setFooter({ text: 'Gamble Bot' });
+
+                                await btn.update({ embeds: [embed], components: [] });
                                 leaveCollector.stop('cancelled');
                             }
                         });
-
                     }
                 } catch (err) {
                     handleInteractionError(i, err);
                 }
             });
 
+            // Callback for when the race starts
             collector.on('end', async (_, reason) => {
                 raceStarted = true;
 
                 // Remove buttons from main message
                 await interaction.editReply({ components: [] });
 
+                // Cancel the race if theres no participants
                 if (participants.size === 0) {
                     const noParticipantsEmbed = new EmbedBuilder()
                         .setTitle(':x: No participants')
@@ -252,6 +311,7 @@ module.exports = {
 
                 let winnerIndex = -1;
 
+                // Keep moving horses until theres a winner
                 while (winnerIndex === -1) {
                     await wait(1500);
 
@@ -259,20 +319,13 @@ module.exports = {
                     for (let idx = 0; idx < HORSES.length; idx++) {
                         const h = HORSES[idx];
                         
-                        // 1. Base movement (1 to 3 spaces) keeps the race moving for everyone
+                        // Base movement
                         let step = Math.floor(Math.random() * 3) + 1;
                         
-                        // 2. Odds advantage: 
-                        // We invert the ratio (1 / ratio) to get a probability.
-                        // Ratio 2.0 -> 50% chance for a bonus.
-                        // Ratio 6.0 -> ~16% chance for a bonus.
-                        if (Math.random() < (1 / h.ratio)) {
-                            step += 2; 
-                        }
+                        // Odds advantage
+                        if (Math.random() < (1 / h.ratio)) step += 2; 
                         
-                        // 3. High variance "sprint"
-                        // Gives a flat 10% chance for any horse to get a massive burst of speed (adds 2 to 5 spaces).
-                        // This is crucial so that the 1:6 underdog can still mathematically win.
+                        // High Variance
                         if (Math.random() < 0.10) {
                             step += Math.floor(Math.random() * 4) + 2; 
                         }
@@ -291,23 +344,20 @@ module.exports = {
                         const h = HORSES[idx];
                         const pos = Math.min(positions[idx], trackLength);
                         
-                        // The finish line is on the left. 
-                        // Spaces ahead of the horse shrink as 'pos' grows.
                         const spacesToFinish = Math.max(0, trackLength - pos);
                         
-                        // Spaces behind the horse grow as 'pos' grows.
                         const spacesCovered = pos;
                         
-                        // Build the reversed track string
-                        const track = `\\_|${'\\_'.repeat(spacesToFinish)}:racehorse:${'\\_'.repeat(spacesCovered)}(${h.id})`;
+                        const track = `\\_\\_|${'\\_'.repeat(spacesToFinish)}:racehorse:${'\\_'.repeat(spacesCovered)}(${h.id})`;
                         
-                        // Display odds as 1 : ratio instead of the multiplier
                         raceDesc += `**Horse ${h.id} (1 : ${h.ratio})**\n${track}\n`;
                     }
 
                     embed.setDescription(raceDesc);
                     await interaction.editReply({ embeds: [embed] });
                 }
+
+                await wait(1500);
 
                 // Race finished, determine winners and pay out
                 const winningHorse = HORSES[winnerIndex];
@@ -316,6 +366,7 @@ module.exports = {
                 const losers = [];
                 const participantResults = [];
 
+                // Iterate over all participants
                 for (const [userId, p] of participants.entries()) {
                     const profile = await db.getUser(userId);
                     if (!profile) continue;
@@ -325,7 +376,7 @@ module.exports = {
                     let resultType = 'lose';
 
                     if (profile.balance < p.bet) {
-                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, note: 'Insufficient funds' });
+                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, note: 'Insufficient Funds' });
                         profit = 0;
                         newBalance = profile.balance;
                     } else if (p.horseId === winningHorse.id) {
@@ -354,6 +405,7 @@ module.exports = {
                     participantResults.push({ userId, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance, resultType });
                 }
 
+                // Build the embed to hold the results
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
                     .setDescription(`Winner: :racehorse: **Horse ${winningHorse.id}** (${winningHorse.ratio.toFixed(2)}x)`)
@@ -361,10 +413,12 @@ module.exports = {
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
 
+                // Build winner field
                 const winnerField = winners.length
                     ? { name: 'Winners', value: winners.map(w => `> <@${w.id}> (**${formatBalance(w.profit, true)}**)`).join('\n'), inline: false }
                     : { name: 'Winners', value: '*No winners this race.*', inline: false };
 
+                // Build loser field
                 const loserField = losers.length
                     ? { name: 'Losers', value: losers.map(l => `> <@${l.id}> (**${formatBalance(l.profit, true)}**)`).join('\n'), inline: false }
                     : { name: 'Losers', value: '*No losers this race.*', inline: false };
@@ -372,6 +426,7 @@ module.exports = {
                 resultEmbed.addFields(winnerField, loserField);
                 await interaction.editReply({ embeds: [resultEmbed], components: [] });
 
+                // Show each participant their own ephemeral result
                 for (const result of participantResults) {
                     try {
                         const user = await interaction.client.users.fetch(result.userId);
