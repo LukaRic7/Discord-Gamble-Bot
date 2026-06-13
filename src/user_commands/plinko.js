@@ -3,20 +3,21 @@ const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
 const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
-function buildPlinkoCodeBlock(positionHistory, gameOver=false) {
+function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver=false) {
     const multipliers = [9.0, 3.5, 1.5, 0.3, 1.5, 3.5, 9.0];
-    const rowCount = positionHistory.length;
+    const rowCount = 6;
 
     let rows = [];
 
     for (let i = 0; i < rowCount; i++) {
         let row = [];
 
-        // spacing before the row
         row.push(' '.repeat(3 * (rowCount - i)));
 
         for (let j = 0; j <= i; j++) {
-            if (positionHistory[i] === j - Math.floor(i / 2)) {
+
+            // only show ball on current row
+            if (i === currentRow && j === currentPosition) {
                 row.push('●');
             } else {
                 row.push('·');
@@ -31,12 +32,11 @@ function buildPlinkoCodeBlock(positionHistory, gameOver=false) {
     rows.push('| ' + multipliers.map(x => x + 'x').join(' | ') + ' |');
 
     if (gameOver) {
-        const final = positionHistory[positionHistory.length - 1];
-
         rows.push(
             '| ' +
-            multipliers.map((_, i) => i === final ? ' ⬤ ' : '   ')
-            .join('|') +
+            multipliers.map((_, i) =>
+                i === currentPosition ? ' ⬤ ' : '   '
+            ).join('|') +
             '|'
         );
     }
@@ -90,18 +90,18 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
 
-            let pos = 0;
+            let pos = 3;
             const history = [];
-            for (let i = 0; i < 6; i++) {
+            for (let row = 0; row < 6; row++) {
                 // move left/right
                 pos += Math.random() < 0.5 ? -1 : 1;
         
                 // keep inside board
-                pos = Math.max(0, Math.min(i + 1, pos));
+                pos = Math.max(0, Math.min(6, pos));
         
                 history.push(pos);
 
-                embed.setDescription(buildPlinkoCodeBlock(history));
+                embed.setDescription(`\`\`\`\n${buildPlinkoCodeBlock(row, pos)}\n\`\`\``);
                 interaction.editReply({ embeds: [embed] });
 
                 await wait(1500);
