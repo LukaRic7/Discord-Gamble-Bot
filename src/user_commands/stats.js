@@ -104,6 +104,7 @@ module.exports = {
                         value: buildField(`Opened: ${thousandSeperator.format(stats.chests_total_opened || 0)}`, `Best Streak: ${stats.chests_longest_win_streak || 0}`),
                         inline: true
                     },
+                    { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                     {
                         name: ':racehorse: Race',
                         value: buildField(`Races Won: ${thousandSeperator.format(stats.race_races_won || 0)}`, `Best Streak: ${stats.race_longest_win_streak || 0}`),
