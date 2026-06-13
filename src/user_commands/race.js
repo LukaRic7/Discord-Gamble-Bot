@@ -22,7 +22,7 @@ module.exports = {
             .setDescription('Amount of seconds to wait before starting the race.')
             .setRequired(true)
             .setMinValue(10)
-            .setMaxValue(120)
+            .setMaxValue(300)
         )
         .setContexts(
             InteractionContextType.BotDM,
