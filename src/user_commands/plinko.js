@@ -115,7 +115,7 @@ module.exports = {
             
             // Update the database
             const updatedProfile = await db.recordGamePlay(userId, betAmount, payout);
-            if (pos == (MULTIPLIERS.length - 1) / 2) {
+            if (pos === 0 || pos === MULTIPLIERS.length - 1) {
                 await db.setPlinkoStats(userId, 1); // Hit edge
             }
 
