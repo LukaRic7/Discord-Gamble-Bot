@@ -118,7 +118,7 @@ class DatabaseManager {
                 user_id            VARCHAR (25) PRIMARY KEY,
                 total_edge_hits    INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
-                    REFERENCES player_profies (user_id)
+                    REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
 
@@ -128,7 +128,7 @@ class DatabaseManager {
                 current_win_streak INT          DEFAULT 0,
                 longest_win_streak INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
-                    REFERENCES player_profies (user_id)
+                    REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
 
@@ -138,7 +138,7 @@ class DatabaseManager {
                 current_win_streak INT          DEFAULT 0,
                 longest_win_streak INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
-                    REFERENCES player_profies (user_id)
+                    REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
 
@@ -146,7 +146,7 @@ class DatabaseManager {
                 user_id            VARCHAR (25) PRIMARY KEY,
                 times_won          INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
-                    REFERENCES player_profies (user_id)
+                    REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
 
@@ -155,7 +155,7 @@ class DatabaseManager {
                 current_win_streak INT          DEFAULT 0,
                 longest_win_streak INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
-                    REFERENCES player_profies (user_id)
+                    REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
             );
         `);
