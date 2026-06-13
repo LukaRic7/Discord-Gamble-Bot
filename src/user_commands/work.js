@@ -42,7 +42,7 @@ module.exports = {
             }
 
             // Calculate reward and claim it
-            const reward = Math.random() * 5 + 5; // $ 5 - 10
+            const reward = Math.random() * 25 + 5; //
             const updatedProfile = await db.claimWork(userId, reward);
 
             // Build the embed to show the successful work claim
