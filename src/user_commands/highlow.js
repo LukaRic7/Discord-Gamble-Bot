@@ -51,7 +51,7 @@ module.exports = {
             .setName('stake')
             .setDescription('Amount to bet.')
             .setRequired(true)
-            .setMinValue(50)
+            .setMinValue(100)
             .setMaxValue(1000)
         )
         .setContexts(
