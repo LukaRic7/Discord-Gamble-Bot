@@ -5,7 +5,7 @@ const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
 // 6 rows means 7 possible landing buckets at the bottom.
 const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
-const ROW_COUNT = 6;
+const ROW_COUNT = 7;
 
 function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     let rows = [];
@@ -32,12 +32,12 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
         return ` ${m.toFixed(1)} `;
     });
     
-    rows.push(`[${multStrings.join('|')}]`);
+    rows.push(`|${multStrings.join('|')}|`);
 
     // 3. Drop the ball into the specific bucket when the game ends
     if (gameOver) {
         const ballRow = MULTIPLIERS.map((_, i) => {
-            return i === currentPosition ? '  ●  ' : '     ';
+            return i === currentPosition ? '\\ ● /' : '\\   /';
         });
         // 1 space prefix aligns the drop slots perfectly with the '|' dividers
         rows.push(' ' + ballRow.join(' '));
