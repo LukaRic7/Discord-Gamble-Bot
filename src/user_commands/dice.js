@@ -102,8 +102,8 @@ module.exports = {
                 .setTitle(':game_die: Dice Result')
                 .setDescription(playerWins ? ':trophy: You won!' : ':x: You lost!')
                 .addFields(
-                    { name: 'Your Roll', value: `${playerRoll.display}\n-#${playerRoll.rankName}`, inline: true },
-                    { name: 'Dealer Roll', value: `${dealerRoll.display}\n-#${dealerRoll.rankName}`, inline: true },
+                    { name: 'Your Roll', value: `${playerRoll.display}\n-# ${playerRoll.rankName}`, inline: true },
+                    { name: 'Dealer Roll', value: `${dealerRoll.display}\n-# ${dealerRoll.rankName}`, inline: true },
                     { name: '\u200B', value: '\u200B', inline: true }, // Spacer
                     { name: 'Stake', value: formatBalance(stake), inline: true },
                     { name: 'Profit', value: formatBalance(profit, true), inline: true },
