@@ -121,6 +121,43 @@ class DatabaseManager {
                     REFERENCES player_profies (user_id)
                     ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS game_war (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                kings_pulled       INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profies (user_id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS game_race (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                races_won          INT          DEFAULT 0,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profies (user_id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS game_lottery (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                times_won          INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profies (user_id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS game_dice (
+                user_id            VARCHAR (25) PRIMARY KEY,
+                current_win_streak INT          DEFAULT 0,
+                longest_win_streak INT          DEFAULT 0,
+                FOREIGN KEY (user_id)
+                    REFERENCES player_profies (user_id)
+                    ON DELETE CASCADE
+            );
         `);
     
         console.log(`[Database] Connected at: "${this.dbFilePath}"`);
@@ -622,6 +659,161 @@ class DatabaseManager {
                 total_opened = total_opened + 1,
                 current_win_streak = EXCLUDED.current_win_streak,
                 longest_win_streak = MAX(game_chests.longest_win_streak, EXCLUDED.longest_win_streak)
+        `, [userId, newStreak, newStreak]);
+    }
+
+    // ==========================================
+    // GAME: WAR
+    // ==========================================
+
+    /**
+     * Ensures a war stats row exists for the user and returns it.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The war stats row for the user.
+     */
+    async getWarStats(userId) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            INSERT INTO game_war (user_id, kings_pulled, current_win_streak, longest_win_streak)
+            VALUES (?, 0, 0, 0)
+            ON CONFLICT(user_id) DO NOTHING
+        `, [userId]);
+
+        return await this.db.get(`SELECT * FROM game_war WHERE user_id = ?`, [userId]);
+    }
+
+    /**
+     * Updates the user's war statistics (kings pulled and streaks).
+     * @param {string} userId - The Discord user ID.
+     * @param {number} addPulledKing - Number of kings pulled to add (usually 0 or 1).
+     * @param {number} newStreak - The user's current win streak for war.
+     * @returns {Promise<void>}
+     */
+    async setWarStats(userId, addPulledKing, newStreak) {
+        await this.db.run(`
+            INSERT INTO game_war (user_id, kings_pulled, current_win_streak, longest_win_streak)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE
+            SET
+                kings_pulled = kings_pulled + EXCLUDED.kings_pulled,
+                current_win_streak = EXCLUDED.current_win_streak,
+                longest_win_streak = MAX(game_war.longest_win_streak, EXCLUDED.longest_win_streak)
+        `, [userId, addPulledKing, newStreak, newStreak]);
+    }
+
+    // ==========================================
+    // GAME: RACE
+    // ==========================================
+
+    /**
+     * Ensures a race stats row exists for the user and returns it.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The race stats row for the user.
+     */
+    async getRaceStats(userId) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            INSERT INTO game_race (user_id, races_won, current_win_streak, longest_win_streak)
+            VALUES (?, 0, 0, 0)
+            ON CONFLICT(user_id) DO NOTHING
+        `, [userId]);
+
+        return await this.db.get(`SELECT * FROM game_race WHERE user_id = ?`, [userId]);
+    }
+
+    /**
+     * Updates the user's race statistics.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} addWin - Number of race wins to add (usually 0 or 1).
+     * @param {number} newStreak - The user's current win streak for races.
+     * @returns {Promise<void>}
+     */
+    async setRaceStats(userId, addWin, newStreak) {
+        await this.db.run(`
+            INSERT INTO game_race (user_id, races_won, current_win_streak, longest_win_streak)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE
+            SET
+                races_won = races_won + EXCLUDED.races_won,
+                current_win_streak = EXCLUDED.current_win_streak,
+                longest_win_streak = MAX(game_race.longest_win_streak, EXCLUDED.longest_win_streak)
+        `, [userId, addWin, newStreak, newStreak]);
+    }
+
+    // ==========================================
+    // GAME: LOTTERY
+    // ==========================================
+
+    /**
+     * Ensures a lottery stats row exists for the user and returns it.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The lottery stats row for the user.
+     */
+    async getLotteryStats(userId) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            INSERT INTO game_lottery (user_id, times_won)
+            VALUES (?, 0)
+            ON CONFLICT(user_id) DO NOTHING
+        `, [userId]);
+
+        return await this.db.get(`SELECT * FROM game_lottery WHERE user_id = ?`, [userId]);
+    }
+
+    /**
+     * Increments the user's lottery wins.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} addWin - Number of wins to add (usually 0 or 1).
+     * @returns {Promise<void>}
+     */
+    async setLotteryStats(userId, addWin) {
+        await this.db.run(`
+            INSERT INTO game_lottery (user_id, times_won)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE
+            SET
+                times_won = times_won + EXCLUDED.times_won
+        `, [userId, addWin]);
+    }
+
+    // ==========================================
+    // GAME: DICE
+    // ==========================================
+
+    /**
+     * Ensures a dice stats row exists for the user and returns it.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The dice stats row for the user.
+     */
+    async getDiceStats(userId) {
+        await this.ensureUser(userId);
+
+        await this.db.run(`
+            INSERT INTO game_dice (user_id, current_win_streak, longest_win_streak)
+            VALUES (?, 0, 0)
+            ON CONFLICT(user_id) DO NOTHING
+        `, [userId]);
+
+        return await this.db.get(`SELECT * FROM game_dice WHERE user_id = ?`, [userId]);
+    }
+
+    /**
+     * Updates the user's dice streak statistics.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} newStreak - The user's current dice win streak.
+     * @returns {Promise<void>}
+     */
+    async setDiceStats(userId, newStreak) {
+        await this.db.run(`
+            INSERT INTO game_dice (user_id, current_win_streak, longest_win_streak)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE
+            SET
+                current_win_streak = EXCLUDED.current_win_streak,
+                longest_win_streak = MAX(game_dice.longest_win_streak, EXCLUDED.longest_win_streak)
         `, [userId, newStreak, newStreak]);
     }
 }
