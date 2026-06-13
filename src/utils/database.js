@@ -14,6 +14,15 @@ class DatabaseManager {
         this.db = null;
     }
 
+    /**
+     * Normalize a monetary value to two decimal places.
+     * @param {number} value - The value to normalize.
+     * @returns {number} The normalized money amount.
+     */
+    normalizeMoney(value) {
+        return Math.round(Number(value) * 100) / 100;
+    }
+
     // ==========================================
     // INITIALIZATION & SETUP
     // ==========================================
@@ -173,7 +182,12 @@ class DatabaseManager {
      * @returns {Promise<Object|null>} The profile row, or null if none exists.
      */
     async getUser(userId) {
-        return await this.db.get(`SELECT * FROM player_profiles WHERE user_id = ?`, [userId]);
+        const row = await this.db.get(`SELECT * FROM player_profiles WHERE user_id = ?`, [userId]);
+        if (!row) return null;
+        return {
+            ...row,
+            balance: this.normalizeMoney(row.balance)
+        };
     }
 
     /**
@@ -200,10 +214,9 @@ class DatabaseManager {
      */
     async recordGamePlay(userId, betAmount, winAmount) {
         await this.ensureUser(userId);
-        let netProfit = winAmount - betAmount;
-        
-        // Round to nearest 2 decimal places
-        netProfit = Math.floor(netProfit * 100) / 100;
+        betAmount = this.normalizeMoney(betAmount);
+        winAmount = this.normalizeMoney(winAmount);
+        let netProfit = this.normalizeMoney(winAmount - betAmount);
 
         await this.db.run(`
             UPDATE player_profiles 
