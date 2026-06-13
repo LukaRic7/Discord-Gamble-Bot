@@ -389,7 +389,7 @@ module.exports = {
                         await db.setRaceStats(userId, 1, currentStreak + 1);
                         
                         newBalance = updatedProfile.balance;
-                        winners.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
+                        winners.push({ id: p.id, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
                         resultType = 'win';
                     } else {
                         profit = -p.bet;
@@ -399,7 +399,7 @@ module.exports = {
                         await db.setRaceStats(userId, 0, 0);
 
                         newBalance = updatedProfile.balance;
-                        losers.push({ userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
+                        losers.push({ id: p.id, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
                     }
 
                     participantResults.push({ userId, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance, resultType });
@@ -408,7 +408,7 @@ module.exports = {
                 // Build the embed to hold the results
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
-                    .setDescription(`Winner: :racehorse: **Horse ${winningHorse.id}** (${winningHorse.ratio.toFixed(2)}x)`)
+                    .setDescription(`The winning horse is: :racehorse: **Horse ${winningHorse.id}** (${winningHorse.ratio.toFixed(2)}x)`)
                     .setColor(Colors.GREEN)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
