@@ -56,9 +56,9 @@ module.exports = {
                     .setFields(...fields);
                 
                 if (firstSend) {
-                    await interaction.reply({ embeds: [embed] });
+                    await interaction.reply({ embeds: [embed], components: [joinButton, leaveButton] });
                 } else {
-                    await interaction.editReply({ embeds: [embed] });
+                    await interaction.editReply({ embeds: [embed], components: [joinButton, leaveButton] });
                 }
             };
 
