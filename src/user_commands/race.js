@@ -46,20 +46,16 @@ module.exports = {
             let raceStarted = false;
 
             // Helper to edit main embed
-            const refreshMainEmbed = async (firstSend=false) => {
+            const refreshMainEmbed = async () => {
                 const fields = [];
                 for (const h of HORSES) {
-                    fields.push({ name: `Horse ${h.id}`, value: `Odds: 1:${Math.round(h.ratio)}\n> *no bets yet*`, inline: false });
+                    fields.push({ name: `Horse ${h.id}`, value: `-# Odds: 1:${Math.round(h.ratio)}\n> *no bets yet*`, inline: false });
                 }
 
                 embed.setDescription(`Race starts <t:${startUnix}:R>.`)
                     .setFields(...fields);
                 
-                if (firstSend) {
-                    await interaction.reply({ embeds: [embed], components: [joinButton, leaveButton] });
-                } else {
-                    await interaction.editReply({ embeds: [embed], components: [joinButton, leaveButton] });
-                }
+                await interaction.editReply({ embeds: [embed], components: [joinButton, leaveButton] });
             };
 
             const embed = new EmbedBuilder()
@@ -74,6 +70,8 @@ module.exports = {
             const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder().addComponents(joinButton, leaveButton);
+            
+            await interaction.reply({ embeds: [embed], components: [row] });
 
             const mainMessage = await interaction.fetchReply();
 
