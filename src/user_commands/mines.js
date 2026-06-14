@@ -103,8 +103,8 @@ module.exports = {
             .setName('stake')
             .setDescription('Amount to bet.')
             .setRequired(true)
-            .setMinValue(250)
-            .setMaxValue(2500)
+            .setMinValue(100)
+            .setMaxValue(1000)
         )
         .addNumberOption((option) => option
             .setName('num_mines')

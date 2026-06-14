@@ -3,7 +3,7 @@ const { SlashCommandBuilder, InteractionContextType, EmbedBuilder, MessageFlags 
 const { Colors, formatBalance, buildAuthor, handleInteractionError, wait } = require('../utils/standards.js');
 const { createInsufficientMoneyEmbed } = require('../utils/standard_embeds.js');
 
-const MULTIPLIERS = [5.0, 2.0, 0.5, 0.2, 0.5, 2.0, 5.0];
+const MULTIPLIERS = [6.0, 2.0, 0.7, 0.3, 0.7, 2.0, 6.0];
 const ROW_COUNT = 7;
 
 /**
@@ -59,7 +59,7 @@ function buildPlinkoCodeBlock(currentRow, currentPosition, gameOver = false) {
     return rows.join('\n');
 }
 
-module.exports = {
+module.exports = { // RTP = 98.44%
     // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('plinko')

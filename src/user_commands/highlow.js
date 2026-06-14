@@ -51,8 +51,8 @@ module.exports = {
             .setName('stake')
             .setDescription('Amount to bet.')
             .setRequired(true)
-            .setMinValue(100)
-            .setMaxValue(1000)
+            .setMinValue(50)
+            .setMaxValue(250)
         )
         .setContexts(
             InteractionContextType.BotDM,

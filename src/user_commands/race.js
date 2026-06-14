@@ -10,7 +10,7 @@ const HORSES = [
 ];
 
 // Bet options the user can choose from
-const BET_OPTIONS = [100, 250, 500, 1000, 2500];
+const BET_OPTIONS = [50, 100, 150, 200, 250];
 
 module.exports = {
     // Contains the slash command instance
