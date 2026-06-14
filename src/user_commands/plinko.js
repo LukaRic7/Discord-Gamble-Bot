@@ -83,7 +83,7 @@ module.exports = { // RTP = 98.44%
         const db = interaction.client.db;
 
         try {
-            const profile = await db.ensureUser(userId);
+            let profile = await db.ensureUser(userId);
 
             if (profile.balance < betAmount) {
                 return await interaction.reply({
@@ -128,7 +128,7 @@ module.exports = { // RTP = 98.44%
             }
 
             // Check if the user has enough money
-            const profile = await db.ensureUser(userId);
+            profile = await db.ensureUser(userId);
             if (profile.balance < betAmount) {
                 return await interaction.reply({ 
                     embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
