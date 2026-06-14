@@ -371,6 +371,14 @@ module.exports = {
                     const profile = await db.getUser(userId);
                     if (!profile) continue;
 
+                    // Check if the user has enough money
+                    if (profile.balance < p.bet) {
+                        return await interaction.reply({ 
+                            embeds: [await createInsufficientMoneyEmbed(interaction, p.bet)], 
+                            flags: MessageFlags.Ephemeral 
+                        });
+                    }
+
                     let profit = 0;
                     let newBalance = profile.balance;
                     let resultType = 'lose';

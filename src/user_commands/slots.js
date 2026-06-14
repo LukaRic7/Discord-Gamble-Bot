@@ -127,6 +127,15 @@ module.exports = {
                 if (i === revealPhases.length - 1) {                    
                     currentStreak = isWin ? currentStreak + 1 : 0;
 
+                    // Check if the user has enough money
+                    const profile = await db.ensureUser(userId);
+                    if (profile.balance < betAmount) {
+                        return await interaction.reply({ 
+                            embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
+                            flags: MessageFlags.Ephemeral 
+                        });
+                    }
+
                     // Update DB with the results
                     const updatedProfile = await db.recordGamePlay(userId, betAmount, payout);
                     await db.setSlotsStats(userId, currentStreak, hitJackpot ? 1 : 0);

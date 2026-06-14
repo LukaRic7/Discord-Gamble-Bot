@@ -285,6 +285,15 @@ module.exports = {
                     }
                 });
 
+                // Check if the user has enough money
+                const profile = await db.ensureUser(userId);
+                if (profile.balance < betAmount) {
+                    return await interaction.reply({ 
+                        embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
+                        flags: MessageFlags.Ephemeral 
+                    });
+                }
+
                 // Update the database
                 const updatedProfile = await db.recordGamePlay(userId, totalWagered, totalWagered + totalProfit);
                 const stats = await db.getBlackjackStats(userId);

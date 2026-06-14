@@ -127,6 +127,15 @@ module.exports = { // RTP = 98.44%
                 if (!isGameOver) await wait(1500);
             }
 
+            // Check if the user has enough money
+            const profile = await db.ensureUser(userId);
+            if (profile.balance < betAmount) {
+                return await interaction.reply({ 
+                    embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
+                    flags: MessageFlags.Ephemeral 
+                });
+            }
+
             // Handle the payout outcome
             const finalMultiplier = MULTIPLIERS[pos];
             const payout = betAmount * finalMultiplier;

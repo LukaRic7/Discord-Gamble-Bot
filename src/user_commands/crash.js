@@ -121,6 +121,15 @@ module.exports = {
 
                 // If the game ended because it hit the crash point
                 if (reason === 'busted') {
+                    // Check if the user has enough money
+                    const profile = await db.ensureUser(userId);
+                    if (profile.balance < betAmount) {
+                        return await interaction.reply({ 
+                            embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
+                            flags: MessageFlags.Ephemeral 
+                        });
+                    }
+
                     // Record loss in DB (0 payout)
                     const updatedProfile = await db.recordGamePlay(userId, betAmount, 0);
 
