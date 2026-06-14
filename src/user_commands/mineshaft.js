@@ -112,17 +112,20 @@ module.exports = {
 
                     if (newRate > currentRate) {
                         // Successful upgrade
+                        const beforeProfile = await db.getUser(userId);
                         await db.setNewMinerHourly(userId, newRate);
                         const updatedStats = await db.getMinerStats(userId);
-                        const profile = await db.getUser(userId);
+                        const afterProfile = await db.getUser(userId);
                         
                         resultEmbed
                             .setTitle(':tada: Better Miner Found!')
-                            .setDescription('You found a more efficient miner! Previous mined goods have been collected and added to your balance!')
+                            .setDescription('You found a more efficient miner!\nPrevious mined goods have been collected!')
                             .addFields(
                                 { name: 'Old Rate', value: formatBalance(currentRate, true), inline: true },
                                 { name: 'New Rate', value: formatBalance(newRate, true), inline: true },
-                                { name: 'Improvement', value: formatBalance(newRate - currentRate, true), inline: true }
+                                { name: 'Improvement', value: formatBalance(newRate - currentRate, true), inline: true },
+                                { name: 'Amount Claimed', value: formatBalance(afterProfile.balance - profile.balance, true), inline: true },
+                                { name: 'New Balance', value: `:moneybag: **${formatBalance(afterProfile.balance)}**`, inline: true }
                             )
                             .setColor(Colors.GREEN);
 
