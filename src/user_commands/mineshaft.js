@@ -149,6 +149,8 @@ module.exports = {
                         await db.setNewMinerHourly(userId, newRate);
                         const updatedStats = await db.getMinerStats(userId);
                         const afterProfile = await db.getUser(userId);
+
+                        const amountClaimed = afterProfile.balance - profile.balance;
                         
                         resultEmbed
                             .setTitle(':tada: Better Miner Found!')
@@ -157,7 +159,7 @@ module.exports = {
                                 { name: 'Old Rate', value: formatBalance(currentRate, true), inline: true },
                                 { name: 'New Rate', value: formatBalance(newRate, true), inline: true },
                                 { name: 'Improvement', value: formatBalance(newRate - currentRate, true), inline: true },
-                                { name: 'Amount Claimed', value: formatBalance(afterProfile.balance - profile.balance, true), inline: true },
+                                { name: 'Amount Claimed', value: formatBalance(amountClaimed == 1000 ? 0 : amountClaimed, true), inline: true },
                                 { name: 'New Balance', value: `:moneybag: **${formatBalance(afterProfile.balance)}**`, inline: true }
                             )
                             .setColor(Colors.GREEN);
