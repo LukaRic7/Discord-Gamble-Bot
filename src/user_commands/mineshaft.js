@@ -52,7 +52,6 @@ module.exports = {
         const db = interaction.client.db;
 
         try {
-            const profile = await db.ensureUser(userId);
             const stats = await db.getMinerStats(userId);
 
             const embed = new EmbedBuilder()
@@ -68,7 +67,7 @@ module.exports = {
                 new ButtonBuilder()
                     .setCustomId('rollnew')
                     .setEmoji('🎲')
-                    .setLabel('Roll New')
+                    .setLabel('Roll New ($1,000)')
                     .setStyle(ButtonStyle.Success),
 
                 new ButtonBuilder()
@@ -93,10 +92,19 @@ module.exports = {
                 }
 
                 if (i.customId === 'rollnew') {
+                    // Ensure the user has enough money
+                    const profile = await db.ensureUser(userId);
+                    if (profile.balance < 100) {
+                        return await interaction.reply({
+                            embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)],
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+
                     // Roll a new miner hourly rate
                     const newRate = rollRandomHourlyRate();
                     const currentRate = stats.miner_hourly_rate;
-                    
+
                     let resultEmbed = new EmbedBuilder()
                         .setAuthor(buildAuthor(interaction))
                         .setTimestamp()
@@ -106,14 +114,15 @@ module.exports = {
                         // Successful upgrade
                         await db.setNewMinerHourly(userId, newRate);
                         const updatedStats = await db.getMinerStats(userId);
+                        const profile = await db.getUser(userId);
                         
                         resultEmbed
                             .setTitle(':tada: Better Miner Found!')
-                            .setDescription(`You found a more efficient miner!`)
+                            .setDescription('You found a more efficient miner! Previous mined goods have been collected and added to your balance!')
                             .addFields(
-                                { name: 'Old Rate', value: `${formatBalance(currentRate, true)}`, inline: true },
-                                { name: 'New Rate', value: `${formatBalance(newRate, true)}`, inline: true },
-                                { name: 'Improvement', value: `+${formatBalance(newRate - currentRate, true)}`, inline: true }
+                                { name: 'Old Rate', value: formatBalance(currentRate, true), inline: true },
+                                { name: 'New Rate', value: formatBalance(newRate, true), inline: true },
+                                { name: 'Improvement', value: formatBalance(newRate - currentRate, true), inline: true }
                             )
                             .setColor(Colors.GREEN);
 
@@ -130,7 +139,8 @@ module.exports = {
                             .addFields(
                                 { name: 'Current Rate', value: `${formatBalance(currentRate, true)}`, inline: true },
                                 { name: 'New Rate', value: `${formatBalance(newRate, true)}`, inline: true },
-                                { name: 'Difference', value: `${formatBalance(newRate - currentRate, true)}`, inline: true }
+                                { name: 'Difference', value: `${formatBalance(newRate - currentRate, true)}`, inline: true },
+                                { name: 'New Balance', value: `:moneybag: **${formatBalance(profile.balance)}**`, inline: false }
                             )
                             .setColor(Colors.RED);
                     }
@@ -154,7 +164,7 @@ module.exports = {
                         .setTitle(':moneybag: Miner Earnings Claimed!')
                         .setDescription(`Your miner has been working hard.`)
                         .addFields(
-                            { name: 'Amount Claimed', value: `:bank: **${formatBalance(earnedAmount, true)}**`, inline: true },
+                            { name: 'Amount Claimed', value: `:bank: ${formatBalance(earnedAmount, true)}`, inline: true },
                             { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
                         )
                         .setColor(Colors.GREEN)
