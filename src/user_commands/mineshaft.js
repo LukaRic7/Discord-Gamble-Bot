@@ -26,6 +26,23 @@ function rollRandomHourlyRate(mean = 40, spread = 0.7) {
     return Math.floor(value);
 }
 
+/**
+ * Builds Discord embed field data for the miner status panel.
+ *
+ * Calculates and formats the user's mining-related statistics,
+ * including hourly rate, last claim time, and currently accumulated
+ * unclaimed earnings based on elapsed time.
+ *
+ * @param {Object} stats - User miner statistics object
+ * @param {number} stats.miner_hourly_rate - Current hourly earning rate of the miner
+ * @param {string|Date|number} [stats.last_miner_claim] - Timestamp of the last claim action
+ *
+ * @returns {Array<{name: string, value: string, inline: boolean}>}
+ * An array of Discord embed field objects containing:
+ * - Hourly Rate (formatted currency/value)
+ * - Last Claim (relative Discord timestamp or "Never")
+ * - Ready To Claim (calculated passive earnings since last claim)
+ */
 function createFields(stats) {
     let lastClaim = '*Never*';
     let readyToClaim = 0;
