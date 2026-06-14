@@ -66,7 +66,7 @@ module.exports = {
         
     // Callback for when the command is executed
     async execute(interaction) {
-        const stake = Math.floor(interaction.options.getNumber('stake'));
+        const stake = interaction.options.getNumber('stake');
         const db = interaction.client.db;
 
         try {
