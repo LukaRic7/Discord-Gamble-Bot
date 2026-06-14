@@ -18,7 +18,7 @@ class Colors {
  * @returns {string} The formatted balance string (e.g., "$1,234.00", "-$50.00").
  */
 function formatBalance(balance, addSignOnPositive=false) {
-    const normalized = Math.floor(balance * 100) / 100;
+    const normalized = Math.round(balance * 100) / 100;
 
     const isNegative = normalized < 0;
 
