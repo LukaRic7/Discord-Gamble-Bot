@@ -107,7 +107,7 @@ module.exports = {
                 if (i.customId === 'rollnew') {
                     // Ensure the user has enough money
                     const profile = await db.ensureUser(userId);
-                    if (profile.balance < 100) {
+                    if (profile.balance < 1000) {
                         return await interaction.reply({
                             embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)],
                             flags: MessageFlags.Ephemeral
@@ -115,7 +115,7 @@ module.exports = {
                     }
 
                     // Subtract the money from the users account
-                    await db.addBalance(userId, -100);
+                    await db.addBalance(userId, -1000);
 
                     // Roll a new miner hourly rate
                     const newRate = rollRandomHourlyRate();
@@ -152,6 +152,7 @@ module.exports = {
                         await interaction.editReply({ embeds: [embed] });
                     } else {
                         // Failed upgrade
+                        const profile = await db.ensureUser(userId);
                         resultEmbed
                             .setTitle(':x: Worse Miner Found')
                             .setDescription(`The miner you found is less efficient.\nYour current miner is still better.`)
