@@ -53,7 +53,7 @@ module.exports = {
     // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('mineshaft')
-        .setDescription('Open the mineshaft window, this is where you earn passive income.')
+        .setDescription('Open the mineshaft, this is where you earn passive income.')
         .setContexts(
             InteractionContextType.BotDM,
             InteractionContextType.PrivateChannel
@@ -167,14 +167,8 @@ module.exports = {
                     await i.reply({ embeds: [resultEmbed], flags: MessageFlags.Ephemeral });
                 } else if (i.customId === 'claim') {
                     // Claim the earned money from the miner
-                    const preClaimStats = await db.getMinerStats(userId);
-                    const lastClaimTime = new Date(preClaimStats.last_miner_claim).getTime();
-                    const currentTime = new Date().getTime();
-                    const secondsElapsed = Math.floor((currentTime - lastClaimTime) / 1000);
-                    const secondlyRate = preClaimStats.miner_hourly_rate / 3600;
-                    const earnedAmount = secondsElapsed * secondlyRate;
-
-                    const updatedStats = await db.claimMinerEarned(userId);
+                    const claimResult = await db.claimMinerEarned(userId);
+                    const earnedAmount = (claimResult && claimResult.earnedAmount) ? claimResult.earnedAmount : 0;
                     const updatedProfile = await db.getUser(userId);
 
                     const resultEmbed = new EmbedBuilder()
@@ -190,7 +184,7 @@ module.exports = {
                         .setFooter({ text: 'Gamble Bot' });
 
                     // Update the main embed with new stats
-                    stats.last_miner_claim = updatedStats.last_miner_claim;
+                    stats.last_miner_claim = claimResult.last_miner_claim;
                     embed.setFields(...createFields(stats));
                     await interaction.editReply({ embeds: [embed] });
 

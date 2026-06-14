@@ -373,21 +373,37 @@ class DatabaseManager {
         
         // If no hourly rate set, nothing to claim.
         if (!stats || stats.miner_hourly_rate === 0) {
-            // Set the timestamp to now, to avoid a huge buildup
+            // Initialize the timestamp to now to avoid awarding a huge buildup later
             await this.db.run(`
                 UPDATE player_profiles
-                SET
-                    last_miner_claim = CURRENT_TIMESTAMP
+                SET last_miner_claim = CURRENT_TIMESTAMP
                 WHERE user_id = ?
             `, [userId]);
 
-            return stats;
+            const refreshed = await this.getMinerStats(userId);
+            return { ...refreshed, earnedAmount: 0 };
+        }
+
+        // Guard against default/epoch timestamps (DB DEFAULT 0). If the stored
+        // `last_miner_claim` is falsy or appears to be the epoch, treat this as
+        // "no previous claim" and initialize the timestamp without awarding
+        // any accumulated earnings.
+        const lastClaimMillis = stats.last_miner_claim ? new Date(stats.last_miner_claim).getTime() : 0;
+        const currentTime = Date.now();
+
+        if (!lastClaimMillis || lastClaimMillis < 10000) {
+            await this.db.run(`
+                UPDATE player_profiles
+                SET last_miner_claim = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            `, [userId]);
+
+            const refreshed = await this.getMinerStats(userId);
+            return { ...refreshed, earnedAmount: 0 };
         }
 
         // Calculate seconds since last claim
-        const lastClaimTime = new Date(stats.last_miner_claim).getTime();
-        const currentTime = new Date().getTime();
-        const secondsElapsed = Math.floor((currentTime - lastClaimTime) / 1000);
+        const secondsElapsed = Math.floor((currentTime - lastClaimMillis) / 1000);
 
         // Calculate earnings: secondly_rate = hourly_rate / 3600
         const secondlyRate = stats.miner_hourly_rate / 3600;
@@ -403,7 +419,8 @@ class DatabaseManager {
             WHERE user_id = ?
         `, [earnedAmount, earnedAmount, userId]);
 
-        return await this.getMinerStats(userId);
+        const refreshed = await this.getMinerStats(userId);
+        return { ...refreshed, earnedAmount };
     }
 
     /**
