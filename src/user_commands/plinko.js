@@ -127,6 +127,8 @@ module.exports = { // RTP = 98.44%
                 if (!isGameOver) await wait(1500);
             }
 
+            await wait(1500);
+
             // Check if the user has enough money
             profile = await db.ensureUser(userId);
             if (profile.balance < betAmount) {
