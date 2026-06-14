@@ -431,7 +431,10 @@ module.exports = {
                         losers.push({ id: p.id, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance: updatedProfile.balance });
                     }
 
-                    participantResults.push({ userId, userTag: p.userTag, stake: p.bet, horse: p.horseId, profit, newBalance, resultType });
+                    participantResults.push({
+                        userId, userTag: p.userTag, stake: p.bet, horse: p.horseId,
+                        profit, newBalance, resultType, interaction: p.interaction
+                    });
                 }
 
                 // Build the embed to hold the results
