@@ -60,7 +60,7 @@ module.exports = {
 
             // Helper to edit main embed
             const refreshMainEmbed = async () => {
-                embed.setDescription(`Race starts <t:${startUnix}:R>.\nPick a horse and place a bet to join.`)
+                embed.setDescription(`Race starts <t:${startUnix}:R>.\nPick a horse and place a bet to join the race.`)
                     .setFields(...buildHorseFields());
                 
                 await interaction.editReply({ embeds: [embed] });
