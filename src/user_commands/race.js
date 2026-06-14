@@ -76,8 +76,18 @@ module.exports = {
                 .setFooter({ text: 'Gamble Bot' });
 
             // Join/Leave button row
-            const joinButton = new ButtonBuilder().setCustomId('race_join').setLabel('Join Race').setStyle(ButtonStyle.Primary);
-            const leaveButton = new ButtonBuilder().setCustomId('race_leave').setLabel('Leave Race').setStyle(ButtonStyle.Secondary);
+            const joinButton = new ButtonBuilder()
+                .setCustomId('race_join')
+                .setEmoji('🐎')
+                .setLabel('Join Race')
+                .setStyle(ButtonStyle.Primary);
+            
+            const leaveButton = new ButtonBuilder()
+                .setCustomId('race_leave')
+                .setEmoji('↪️')
+                .setLabel('Leave Race')
+                .setStyle(ButtonStyle.Secondary);
+            
             const row = new ActionRowBuilder().addComponents(joinButton, leaveButton);
             
             await interaction.reply({ embeds: [embed], components: [row] });
@@ -121,6 +131,7 @@ module.exports = {
                         const horseButtons = new ActionRowBuilder().addComponents(
                             ...HORSES.map(h => new ButtonBuilder()
                                 .setCustomId(`race_pick_horse_${h.id}`)
+                                .setEmoji('🐴')
                                 .setLabel(`Horse ${h.id}`)
                                 .setStyle(ButtonStyle.Primary))
                         );
@@ -129,13 +140,18 @@ module.exports = {
                         const betButtons = new ActionRowBuilder().addComponents(
                             ...BET_OPTIONS.map(b => new ButtonBuilder()
                                 .setCustomId(`race_pick_bet_${b}`)
+                                .setEmoji('💵')
                                 .setLabel(`${b}`)
                                 .setStyle(ButtonStyle.Secondary)
                                 .setDisabled(b > profile.balance))
                         );
 
                         const abortButton = new ActionRowBuilder().addComponents(
-                            new ButtonBuilder().setCustomId('race_join_abort').setLabel('Abort').setStyle(ButtonStyle.Danger)
+                            new ButtonBuilder()
+                                .setCustomId('race_join_abort')
+                                .setEmoji('❌')
+                                .setLabel('Abort')
+                                .setStyle(ButtonStyle.Danger)
                         );
 
                         await i.reply({ embeds: [selectionEmbed], components: [horseButtons, betButtons, abortButton], flags: MessageFlags.Ephemeral });
@@ -236,11 +252,13 @@ module.exports = {
                         // Ask for confirmation
                         const confirm = new ButtonBuilder()
                             .setCustomId('race_leave_confirm')
+                            .setEmoji('↪️')
                             .setLabel('Confirm Leave')
                             .setStyle(ButtonStyle.Danger);
 
                         const cancel = new ButtonBuilder()
                             .setCustomId('race_leave_cancel')
+                            .setEmoji('❌')
                             .setLabel('Cancel')
                             .setStyle(ButtonStyle.Secondary);
 

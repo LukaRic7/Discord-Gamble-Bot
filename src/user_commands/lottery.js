@@ -67,8 +67,18 @@ module.exports = {
                 .setFooter({ text: 'Gamble Bot' });
 
             // Build the button row
-            const joinBtn = new ButtonBuilder().setCustomId('lottery_join').setLabel('Join Lottery').setStyle(ButtonStyle.Success);
-            const leaveBtn = new ButtonBuilder().setCustomId('lottery_leave').setLabel('Leave Lottery').setStyle(ButtonStyle.Secondary);
+            const joinBtn = new ButtonBuilder()
+                .setCustomId('lottery_join')
+                .setEmoji('🎟️')
+                .setLabel('Join Lottery')
+                .setStyle(ButtonStyle.Success);
+            
+            const leaveBtn = new ButtonBuilder()
+                .setCustomId('lottery_leave')
+                .setEmoji('↪️')
+                .setLabel('Leave Lottery')
+                .setStyle(ButtonStyle.Secondary);
+            
             const row = new ActionRowBuilder().addComponents(joinBtn, leaveBtn);
 
             await interaction.reply({ embeds: [embed], components: [row] });
@@ -133,11 +143,13 @@ module.exports = {
                         // Confirm leave buttons
                         const confirm = new ButtonBuilder()
                             .setCustomId('lottery_leave_confirm')
+                            .setEmoji('↪️')
                             .setLabel('Confirm Leave')
                             .setStyle(ButtonStyle.Danger);
                         
                         const cancel = new ButtonBuilder()
                             .setCustomId('lottery_leave_cancel')
+                            .setEmoji('❌')
                             .setLabel('Cancel')
                             .setStyle(ButtonStyle.Secondary);
 
