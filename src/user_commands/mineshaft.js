@@ -88,7 +88,7 @@ module.exports = {
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(':pick: ' + (stats.miner_hourly_rate === 0 ? 'Purchase a miner to start earning passive income.' : 'Your miner has been hard at work.'))
                 .setFields(...createFields(stats))
-                .setColor(Colors.GREEN)
+                .setColor(Colors.CORE)
                 .setTimestamp()
                 .setFooter({ text: 'Gamble Bot' });
 
