@@ -50,7 +50,7 @@ module.exports = {
                     // Grab users that voted for that horse
                     const userIds = [...participants]
                         .filter(([_, data]) => data.horseId === h.id)
-                        .map(([userId]) => `> <@${userId}>`).join('\n');
+                        .map(([userId, data]) => `> <@${userId}> (**${formatBalance(data.bet)}**)`).join('\n');
 
                     fields.push({ name: `Horse ${h.id}`, value: `-# Odds: 1:${Math.round(h.ratio)}\n${userIds ? userIds : '> *no bets yet*'}`, inline: false });
                 }
@@ -209,7 +209,10 @@ module.exports = {
 
                             // Check if both are ready, if not, just update the embed safely.
                             if (chosenHorse && chosenBet) {
-                                participants.set(i.user.id, { id: i.user.id, userTag: i.user.tag, horseId: chosenHorse.id, ratio: chosenHorse.ratio, bet: chosenBet });
+                                participants.set(i.user.id, {
+                                    id: i.user.id, userTag: i.user.tag, horseId: chosenHorse.id,
+                                    ratio: chosenHorse.ratio, bet: chosenBet, interaction: i
+                                });
                                 joined = true;
 
                                 // Build the embed to show the user what they picked
@@ -471,7 +474,7 @@ module.exports = {
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
 
-                        await interaction.followUp({ embeds: [dmEmbed], flags: MessageFlags.Ephemeral });
+                        await result.interaction.followUp({ embeds: [dmEmbed], flags: MessageFlags.Ephemeral });
                     } catch {
                         // Ignore DM failures silently.
                     }
