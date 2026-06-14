@@ -250,6 +250,22 @@ class DatabaseManager {
     }
 
     /**
+     * Add or subtract money from a users account. Is not tracked in stats.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} balance - The balance to be added (negative number gets subtracted).
+     */
+    async addBalance(userId, balance) {
+        await this.ensureUser(userId);
+
+        await this.db.get(`
+            UPDATE player_profiles
+            SET
+                balance = balance + ?
+            WHERE user_id = ?
+        `, [balance, userId]);
+    }
+
+    /**
      * Claims the daily reward and updates streak and balance information.
      * @param {string} userId - The Discord user ID.
      * @param {number} reward - The amount to credit.

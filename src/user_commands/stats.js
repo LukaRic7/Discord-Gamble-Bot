@@ -63,7 +63,8 @@ module.exports = {
                         name: ':bar_chart: General Profile',
                         value: buildField(
                             `Balance: ${formatBalance(stats.balance || 0)}`, `Wagered: ${formatBalance(stats.total_waged || 0)}`,
-                            `Profit: ${formatBalance(stats.lifetime_profit || 0)}`, `Games Played: ${thousandSeperator.format(stats.total_games_played || 0)}`
+                            `Mineshaft: ${formatBalance(stats.total_from_miner || 0)}`, `Profit: ${formatBalance(stats.lifetime_profit || 0)}`,
+                            `Games Played: ${thousandSeperator.format(stats.total_games_played || 0)}`
                         ),
                         inline: true
                     },

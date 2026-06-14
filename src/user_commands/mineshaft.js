@@ -4,13 +4,26 @@ const { Colors, formatBalance, buildAuthor, handleInteractionError } = require('
 const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteractionEmbed } = require('../utils/standard_embeds.js');
 
 /**
- * Generates a random hourly rate for a miner roll.
- * Rates range from 50 to 500 with an average around 200.
- * @returns {number} A random hourly rate value.
+ * Generates a right-skewed random hourly rate.
+ * Most values are near the mean, rare high rolls happen.
+ *
+ * @param {number} mean Target average hourly rate
+ * @param {number} spread Higher = more extreme rare rolls
+ * @returns {number} Random hourly rate
  */
-function rollRandomHourlyRate() {
-    // Generate a value between 50 and 500
-    return Math.floor(Math.random() * 450) + 50;
+function rollRandomHourlyRate(mean = 40, spread = 0.7) {
+    // Box-Muller normal distribution
+    const u = Math.random();
+    const v = Math.random();
+
+    const normal =
+        Math.sqrt(-2 * Math.log(u)) *
+        Math.cos(2 * Math.PI * v);
+
+    // Convert normal -> log-normal
+    const value = mean * Math.exp(normal * spread - (spread * spread) / 2);
+
+    return Math.floor(value);
 }
 
 function createFields(stats) {
@@ -56,11 +69,11 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
-                .setDescription(':pick: ' + (stats.miner_hourly_rate === 0 ? 'Purchase a miner to start earning passive income.' : 'Your miner has been at hard work'))
+                .setDescription(':pick: ' + (stats.miner_hourly_rate === 0 ? 'Purchase a miner to start earning passive income.' : 'Your miner has been hard at work.'))
                 .setFields(...createFields(stats))
                 .setColor(Colors.GREEN)
                 .setTimestamp()
-                .setFooter({ text: 'Gamble Bot' })
+                .setFooter({ text: 'Gamble Bot' });
 
             // Build the action row containing buttons
             const row = new ActionRowBuilder().addComponents(
@@ -101,6 +114,9 @@ module.exports = {
                         });
                     }
 
+                    // Subtract the money from the users account
+                    await db.addBalance(userId, -100);
+
                     // Roll a new miner hourly rate
                     const newRate = rollRandomHourlyRate();
                     const currentRate = stats.miner_hourly_rate;
@@ -138,7 +154,7 @@ module.exports = {
                         // Failed upgrade
                         resultEmbed
                             .setTitle(':x: Worse Miner Found')
-                            .setDescription(`The miner you found is less efficient. Your current miner is still better.`)
+                            .setDescription(`The miner you found is less efficient.\nYour current miner is still better.`)
                             .addFields(
                                 { name: 'Current Rate', value: `${formatBalance(currentRate, true)}`, inline: true },
                                 { name: 'New Rate', value: `${formatBalance(newRate, true)}`, inline: true },
@@ -149,7 +165,6 @@ module.exports = {
                     }
 
                     await i.reply({ embeds: [resultEmbed], flags: MessageFlags.Ephemeral });
-
                 } else if (i.customId === 'claim') {
                     // Claim the earned money from the miner
                     const preClaimStats = await db.getMinerStats(userId);
