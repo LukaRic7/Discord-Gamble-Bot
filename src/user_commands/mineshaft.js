@@ -126,7 +126,7 @@ module.exports = {
                     const profile = await db.ensureUser(userId);
                     if (profile.balance < 1000) {
                         return await interaction.reply({
-                            embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)],
+                            embeds: [await createInsufficientMoneyEmbed(interaction, 1000)],
                             flags: MessageFlags.Ephemeral
                         });
                     }
