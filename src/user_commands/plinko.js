@@ -130,7 +130,7 @@ module.exports = { // RTP = 98.44%
             // Check if the user has enough money
             profile = await db.ensureUser(userId);
             if (profile.balance < betAmount) {
-                return await interaction.reply({ 
+                return await interaction.editReply({ 
                     embeds: [await createInsufficientMoneyEmbed(interaction, betAmount)], 
                     flags: MessageFlags.Ephemeral 
                 });
@@ -157,7 +157,6 @@ module.exports = { // RTP = 98.44%
                 .setColor(profit > 0 ? Colors.GREEN : Colors.RED);
             
             await interaction.editReply({ embeds: [embed] });
-
         } catch (error) {
             handleInteractionError(interaction, error);
         }
