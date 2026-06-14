@@ -125,7 +125,7 @@ module.exports = {
                     // Ensure the user has enough money
                     const profile = await db.ensureUser(userId);
                     if (profile.balance < 1000) {
-                        return await i.followUp({
+                        return await i.reply({
                             embeds: [await createInsufficientMoneyEmbed(interaction, 1000)],
                             flags: MessageFlags.Ephemeral
                         });
