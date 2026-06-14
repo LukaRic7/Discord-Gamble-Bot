@@ -18,7 +18,9 @@ class Colors {
  * @returns {string} The formatted balance string (e.g., "$1,234.00", "-$50.00").
  */
 function formatBalance(balance, addSignOnPositive=false) {
-    const isNegative = balance < 0;
+    const normalized = Math.floor(balance * 100) / 100;
+
+    const isNegative = normalized < 0;
 
     const formatter = Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -26,7 +28,7 @@ function formatBalance(balance, addSignOnPositive=false) {
 
     const sign = isNegative ? '-' : (addSignOnPositive ? '+' : '');
 
-    return `${sign}$${formatter.format(Math.abs(balance))}`;
+    return `${sign}$${formatter.format(Math.abs(normalized))}`;
 }
 
 /**

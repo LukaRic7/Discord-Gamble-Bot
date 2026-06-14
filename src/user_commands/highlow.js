@@ -176,8 +176,8 @@ module.exports = {
                         { name: 'Stake', value: formatBalance(betAmount), inline: true },
                         { name: 'Streak', value: `:fire: ${correctGuesses}`, inline: true },
                         { name: 'Multiplier', value: `${getMultiplier(correctGuesses).toFixed(2)}x`, inline: true },
-                        { name: 'New Balance', value: `:moneybag: ${formatBalance(updatedProfile.balance)}`, inline: true },
-                        { name: 'Profit', value: formatBalance(net), inline: true }
+                        { name: 'Profit', value: formatBalance(net), inline: true },
+                        { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: true }
                     )
                     .setColor(net > 0 ? Colors.GREEN : Colors.RED)
                     .setTimestamp()

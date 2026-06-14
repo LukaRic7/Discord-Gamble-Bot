@@ -148,7 +148,7 @@ module.exports = {
                             { name: 'Stake', value: formatBalance(betAmount), inline: true },
                             { name: 'Profit', value: formatBalance(payout - betAmount, true), inline: true },
                             { name: 'Streak', value: `:fire: ${currentStreak}`, inline: true },
-                            { name: 'New Balance', value: `:moneybag: ${formatBalance(updatedProfile.balance)}`, inline: false }
+                            { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                         );
                 }
 
