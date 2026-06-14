@@ -441,7 +441,7 @@ module.exports = {
                 const resultEmbed = new EmbedBuilder()
                     .setTitle(':checkered_flag: Race Finished')
                     .setDescription(`The winning horse is: :racehorse: **Horse ${winningHorse.id}** (${winningHorse.ratio.toFixed(2)}x)`)
-                    .setColor(Colors.GREEN)
+                    .setColor(Colors.CORE)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
 
