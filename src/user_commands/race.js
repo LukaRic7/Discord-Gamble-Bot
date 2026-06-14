@@ -445,7 +445,7 @@ module.exports = {
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
 
-                        await user.followUp({ embeds: [dmEmbed], flags: MessageFlags.Ephemeral });
+                        await interaction.followUp({ embeds: [dmEmbed], flags: MessageFlags.Ephemeral });
                     } catch {
                         // Ignore DM failures silently.
                     }

@@ -262,7 +262,7 @@ module.exports = {
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
 
-                        await user.follwUp({ embeds: [dm], flags: MessageFlags.Ephemeral });
+                        await interaction.follwUp({ embeds: [dm], flags: MessageFlags.Ephemeral });
                     } catch {
                         // Ignore
                     }
