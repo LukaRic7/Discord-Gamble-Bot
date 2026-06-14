@@ -54,7 +54,10 @@ class DatabaseManager {
                 total_received     BIGINT       DEFAULT 0,
                 total_dailys       INT          DEFAULT 0,
                 total_works        INT          DEFAULT 0,
-                total_from_claims  BIGINT       DEFAULT 0
+                total_from_claims  BIGINT       DEFAULT 0,
+                total_from_miner   BIGINT       DEFAULT 0,
+                last_miner_claim   TIMESTAMP    DEFAULT 0,
+                miner_hourly_rate  INT          DEFAULT 0
             );
     
             CREATE TABLE IF NOT EXISTS game_slots (
@@ -304,6 +307,87 @@ class DatabaseManager {
         `, [reward, reward, userId]);
 
         return await this.getUser(userId);
+    }
+
+    /**
+     * Retrieves the miner statistics for a user.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The user's miner stats (total_from_miner, last_miner_claim, miner_hourly_rate).
+     */
+    async getMinerStats(userId) {
+        await this.ensureUser(userId);
+
+        return await this.db.get(`
+            SELECT total_from_miner, last_miner_claim, miner_hourly_rate
+            FROM player_profiles
+            WHERE user_id = ?
+        `, [userId]);
+    }
+
+    /**
+     * Claims earned miner money and sets a new hourly rate.
+     * @param {string} userId - The Discord user ID.
+     * @param {number} hourlyRate - The new hourly rate to set.
+     * @returns {Promise<Object>} The updated miner stats.
+     */
+    async setNewMinerHourly(userId, hourlyRate) {
+        // First claim any money earned from the previous miner
+        await this.claimMinerEarned(userId);
+
+        // Set the new hourly rate
+        await this.db.run(`
+            UPDATE player_profiles
+            SET miner_hourly_rate = ?
+            WHERE user_id = ?
+        `, [hourlyRate, userId]);
+
+        return await this.getMinerStats(userId);
+    }
+
+    /**
+     * Claims the money earned from the miner since the last claim.
+     * @param {string} userId - The Discord user ID.
+     * @returns {Promise<Object>} The updated miner stats.
+     */
+    async claimMinerEarned(userId) {
+        await this.ensureUser(userId);
+
+        // Get current miner stats to calculate earnings
+        const stats = await this.getMinerStats(userId);
+        
+        // If no hourly rate set, nothing to claim.
+        if (!stats || stats.miner_hourly_rate === 0) {
+            // Set the timestamp to now, to avoid a huge buildup
+            await this.db.run(`
+                UPDATE player_profiles
+                SET
+                    last_miner_claim = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            `, [userId]);
+
+            return stats;
+        }
+
+        // Calculate seconds since last claim
+        const lastClaimTime = new Date(stats.last_miner_claim).getTime();
+        const currentTime = new Date().getTime();
+        const secondsElapsed = Math.floor((currentTime - lastClaimTime) / 1000);
+
+        // Calculate earnings: secondly_rate = hourly_rate / 3600
+        const secondlyRate = stats.miner_hourly_rate / 3600;
+        const earnedAmount = this.normalizeMoney(secondsElapsed * secondlyRate);
+
+        // Update balance and total_from_miner, and set last_miner_claim to now
+        await this.db.run(`
+            UPDATE player_profiles
+            SET
+                balance = balance + ?,
+                total_from_miner = total_from_miner + ?,
+                last_miner_claim = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        `, [earnedAmount, earnedAmount, userId]);
+
+        return await this.getMinerStats(userId);
     }
 
     /**
