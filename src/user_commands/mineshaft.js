@@ -67,13 +67,13 @@ module.exports = {
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('rollnew')
-                    .setEmoji(':die:')
+                    .setEmoji('🎲')
                     .setLabel('Roll New')
                     .setStyle(ButtonStyle.Success),
 
                 new ButtonBuilder()
                     .setCustomId('claim')
-                    .setEmoji(':bank:')
+                    .setEmoji('🏦')
                     .setLabel('Claim')
                     .setStyle(ButtonStyle.Primary)
             );
