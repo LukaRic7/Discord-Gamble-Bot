@@ -10,7 +10,7 @@ const HORSES = [
 ];
 
 // Bet options the user can choose from
-const BET_OPTIONS = [50, 100, 150, 200, 250];
+const BET_OPTIONS = [100, 200, 300, 400, 500];
 
 module.exports = {
     // Contains the slash command instance
@@ -344,7 +344,8 @@ module.exports = {
                         let step = Math.floor(Math.random() * 3) + 1;
                         
                         // Odds advantage
-                        if (Math.random() < (1 / h.ratio)) step += 2; 
+                        const baseChance = 0.6;
+                        if (Math.random() < baseChance / (h.ratio * h.ratio)) step += 2;
                         
                         // High Variance
                         if (Math.random() < 0.10) {

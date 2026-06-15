@@ -1,0 +1,14 @@
+# Game Fairness & Parameters
+|Game|Return to Player|House Edge|Certainty|Stake|Other|
+|----|----------------|----------|---------|-----|-----|
+|Slots|167.50%|-67.50%|Somewhat|50-150|
+|Highlow|130.00%|-30.00%|Somewhat|50-250|
+|Dice|115.90%|-15.90%|Absolute|100-500|
+|Crash|107.50%|-7.50%|Somewhat|100-500|
+|Coinflip|100.00%|0.00%|Absolute|5-500|
+|War|100.00%|0.00%|Absolute|100-500|
+|Plinko|98.44%|+1.56%|Absolute|200-1000|
+|Blackjack|97.25%|+2.75%|Moderate|100-1000|
+|Mines|94.50%|+5.50%|Moderate|100-1000|Num Mines = 5-14|
+|Race|90.00%|+10.00%|Somewhat|100, 200, 300, 400, 500|Intermission = 10-300s
+|Chests|90.00%|+10.00%|Absolute|250-750|

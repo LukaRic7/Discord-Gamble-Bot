@@ -153,7 +153,7 @@ module.exports = {
             .setDescription('Amount to bet.')
             .setRequired(true)
             .setMinValue(100)
-            .setMaxValue(800)
+            .setMaxValue(1000)
         )
         .setContexts(
             InteractionContextType.BotDM,

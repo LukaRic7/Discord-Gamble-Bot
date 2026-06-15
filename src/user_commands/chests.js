@@ -12,8 +12,8 @@ module.exports = {
             .setName('stake')
             .setDescription('Amount to bet.')
             .setRequired(true)
-            .setMinValue(100)
-            .setMaxValue(300)
+            .setMinValue(250)
+            .setMaxValue(750)
         )
         .setContexts(
             InteractionContextType.BotDM,
@@ -53,7 +53,7 @@ module.exports = {
             const stats = await db.getChestsStats(userId);
             const initialEmbed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
-                .setDescription('Pick one of the chests below. One holds a **3x payout**, the others are empty!')
+                .setDescription('Pick one of the chests below. One holds a **4.5x payout**, the others are empty!')
                 .addFields(
                     { name: 'Stake', value: formatBalance(betAmount), inline: true },
                     { name: 'Streak', value: `:fire: ${stats.current_win_streak}`, inline: true }
@@ -90,7 +90,7 @@ module.exports = {
 
                 // Game Logic (20% Win Chance)
                 const isWin = Math.random() < 0.20;
-                const winAmount = isWin ? (betAmount * 3) : 0;
+                const winAmount = isWin ? (betAmount * 4.5) : 0;
                 
                 // Determine where the winning chest actually is to show them
                 let winningIndex = clickedIndex;

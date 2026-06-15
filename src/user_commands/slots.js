@@ -38,15 +38,15 @@ function calculatePayout(stake, result) {
     // 3 of a kind
     if (result[0] === result[1] && result[1] === result[2]) {
         switch (result[0]) {
-            case ':seven:': multiplier = 50; hitJackpot = true; break;
-            case ':gem:': multiplier = 25; break;
-            case ':bell:': multiplier = 10; break;
-            default: multiplier = 5; break; // Fruit 3-of-a-kind
+            case ':seven:': multiplier = 25; hitJackpot = true; break;
+            case ':gem:': multiplier = 10; break;
+            case ':bell:': multiplier = 5; break;
+            default: multiplier = 2.5; break; // Fruit 3-of-a-kind
         }
     } 
     // 2 of a kind (any two matching)
     else if (result[0] === result[1] || result[1] === result[2] || result[0] === result[2]) {
-        multiplier = 1.5; 
+        multiplier = 1.5;
     }
 
     return { payout: stake * multiplier, multiplier, hitJackpot };
