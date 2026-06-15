@@ -212,7 +212,7 @@ module.exports = {
                             { name: 'Stake', value: formatBalance(betAmount), inline: true },
                             { name: 'Multiplier', value: `${currentMultiplier.toFixed(2)}x`, inline: true },
                             { name: 'Profit', value: formatBalance(payout - betAmount, true), inline: true },
-                            { name: 'New Balance', value: `:moneybag: ${formatBalance(updatedProfile.balance)}`, inline: false }
+                            { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                         )
                         .setTimestamp()
                         .setFooter({ text: 'Gamble Bot' });
