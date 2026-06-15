@@ -23,7 +23,7 @@ function rollRandomHourlyRate(mean = 40, spread = 0.7) {
     // Convert normal -> log-normal
     const value = mean * Math.exp(normal * spread - (spread * spread) / 2);
 
-    return Math.floor(value);
+    return Math.floor(value * 100) / 100;
 }
 
 /**
