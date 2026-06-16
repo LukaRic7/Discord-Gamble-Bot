@@ -8,12 +8,12 @@ const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 const SHOT_PRICE = 1;
 const MIN_SHOTS = 4;
 const MAX_SHOTS = 20;
-const TIME_LIMIT_MS = 3 * 60 * 1000; // 3 minutes
+const TIME_LIMIT_MS = 3*60*1000;
 
 const SHIPS = [
-    { name: 'Carrier', length: 5, emoji: '🚢' },
-    { name: 'Cruiser', length: 3, emoji: '🛥️' },
-    { name: 'Destroyer', length: 2, emoji: '🚤' }
+    { name: 'Carrier', length: 5 },
+    { name: 'Cruiser', length: 3 },
+    { name: 'Destroyer', length: 2 }
 ];
 
 function randInt(max) { return Math.floor(Math.random() * max); }
@@ -50,7 +50,7 @@ function placeShips() {
 
             // place
             for (const idx of coords) occupied.add(idx);
-            placed.push({ name: def.name, length: def.length, coords, hits: 0, sunk: false, emoji: def.emoji });
+            placed.push({ name: def.name, length: def.length, coords, hits: 0, sunk: false });
             break;
         }
     }
@@ -64,23 +64,25 @@ function generateBoardComponents(ships, revealed, gameOver) {
         const row = new ActionRowBuilder();
         for (let c = 0; c < GRID_SIZE; c++) {
             const idx = r * GRID_SIZE + c;
-            const wasShot = revealed[idx];
-            const ship = ships.find(s => s.coords.includes(idx));
+            const isRevealed = revealed[idx] || gameOver;
             let emoji = '❓';
             let style = ButtonStyle.Secondary;
             let disabled = false;
 
-            if (wasShot) {
+            if (isRevealed) {
                 disabled = true;
-                emoji = ship ? ship.emoji : '🌊';
-                style = ButtonStyle.Danger;
-            } else if (gameOver) {
-                disabled = true;
-                if (ship) {
-                    emoji = ship.emoji;
+                const ship = ships.find(s => s.coords.includes(idx));
+                if (ship && revealed[idx]) {
+                    emoji = '💥';
+                    style = ButtonStyle.Danger;
+                } else if (ship && !revealed[idx]) {
+                    emoji = '🚢';
                     style = ButtonStyle.Primary;
-                } else {
+                } else if ((!ship && revealed[idx]) || gameOver) {
                     emoji = '🌊';
+                    style = ButtonStyle.Secondary;
+                } else {
+                    emoji = '❓';
                     style = ButtonStyle.Secondary;
                 }
             }
@@ -136,14 +138,22 @@ module.exports = {
             shipPayouts['Cruiser'] = stake * 1.5;
             shipPayouts['Destroyer'] = stake * 0.8;
 
+            const buildShipFields = () => {
+                const shipFields = [];
+                for (const s of ships) {
+                    shipFields.push({ name: s.name, value: s.sunk ? ':x: Ship Sunk' : ':white_check_mark: Still Alive', inline: true });
+                }
+                return shipFields;
+            }
+
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setTitle(':crossed_swords: War In Progress')
                 .setDescription(`Enemy ships leave <t:${Math.floor(Date.now()/1000 + TIME_LIMIT_MS/1000)}:R>. Sink them before then!`)
                 .addFields(
+                    ...buildShipFields(),
                     { name: 'Shots Left', value: `:gun: ${shotsLeft}`, inline: true },
-                    { name: 'Ships', value: ships.map(s => `> ${s.sunk ? ':x:' : ':white_check_mark:'} **${s.name}**`).join('\n'), inline: true },
-                    { name: 'Profit', value: `**${formatBalance(-stake, true)}**`, inline: true }
+                    { name: 'Profit', value: `${formatBalance(-stake, true)}`, inline: true }
                 )
                 .setColor(Colors.YELLOW)
                 .setTimestamp()
@@ -183,9 +193,9 @@ module.exports = {
 
                 // Update embed fields
                 embed.setFields(
+                    ...buildShipFields(),
                     { name: 'Shots Left', value: `:gun: ${shotsLeft}`, inline: true },
-                    { name: 'Ships', value: ships.map(s => `> ${s.sunk ? ':x:' : ':white_check_mark:'} **${s.name}**`).join('\n'), inline: true },
-                    { name: 'Profit', value: `**${formatBalance(totalPayout - stake, true)}**`, inline: true }
+                    { name: 'Profit', value: `${formatBalance(totalPayout - stake, true)}`, inline: true }
                 );
 
                 const components = generateBoardComponents(ships, revealed, false);
@@ -203,13 +213,13 @@ module.exports = {
                 const shotsFired = shots - shotsLeft;
 
                 // Record game play
-                const updatedProfile = await db.recordGamePlay(userId, stake, totalPayout);
+                const updatedProfile = await db.getUser(userId); //await db.recordGamePlay(userId, stake, totalPayout);
                 await db.setWarStats(userId, shipsSunk, shotsFired);
 
                 // Build final embed
                 const profit = totalPayout - stake;
                 const title = ':crossed_swords: War Results';
-                const description = profit >= 0 ? ':trophy: You made a profit!' : ':x: You lost money this round.';
+                const description = profit >= 0 ? ':trophy: You made a profit, good spoils of war!' : ':x: You did not spoils this war.';
                 const color = profit >= 0 ? Colors.GREEN : Colors.RED;
 
                 embed.setTitle(title)
@@ -218,7 +228,7 @@ module.exports = {
                     .setFields(
                         { name: 'Stake', value: formatBalance(stake), inline: true },
                         { name: 'Profit', value: formatBalance(profit, true), inline: true },
-                        { name: 'Ships Sunk', value: `${shipsSunk}`, inline: true },
+                        { name: ':ship: Ships Sunk', value: `${shipsSunk}`, inline: true },
                         { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                     )
                     .setTimestamp();
