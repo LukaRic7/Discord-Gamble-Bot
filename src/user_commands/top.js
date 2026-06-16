@@ -51,7 +51,7 @@ module.exports = {
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(
                     ownPlace !== -1
-                        ? `You are in **#${thousandSeperator.format(ownPlace + 1)}** place.`
+                        ? `You are in place **#${thousandSeperator.format(ownPlace + 1)}** of **${thousandSeperator.format(leaderboard.length)}**`
                         : 'You do not have a gambling account.'
                 )
                 .setFields(fields)
