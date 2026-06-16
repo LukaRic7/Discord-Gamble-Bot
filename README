@@ -1,10 +1,10 @@
 # Game Fairness & Parameters
 |Game|Return to Player|House Edge|Certainty|Stake|Other|
 |----|----------------|----------|---------|-----|-----|
-|Slots|167.50%|-67.50%|Somewhat|50-150|
 |Highlow|130.00%|-30.00%|Somewhat|50-250|
 |Dice|115.90%|-15.90%|Absolute|100-500|
 |Crash|107.50%|-7.50%|Somewhat|100-500|
+|Slots|107.00%|-7.00%|Absolute|50-150|
 |Coinflip|100.00%|0.00%|Absolute|5-500|
 |War|100.00%|0.00%|Absolute|100-500|
 |Plinko|98.44%|+1.56%|Absolute|200-1000|
