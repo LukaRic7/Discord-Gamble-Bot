@@ -115,7 +115,7 @@ module.exports = {
                         }
 
                         // Add the user to the participants list
-                        participants.set(i.user.id, { userTag: i.user.tag });
+                        participants.set(i.user.id, { userTag: i.user.tag, interaction: i });
 
                         // Build the success feedback embed
                         const embed = new EmbedBuilder()
@@ -239,11 +239,11 @@ module.exports = {
                         const profit = (pool - ticketPrice);
 
                         winner = { userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance };
-                        results.push({ userId, userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance, winner: true });
+                        results.push({ userId, interaction: p.interaction, userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance, winner: true });
                     } else {
                         const updated = await db.recordGamePlay(userId, ticketPrice, 0);
                         const profit = -ticketPrice;
-                        results.push({ userId, userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance, winner: false });
+                        results.push({ userId, interaction: p.interaction, userTag: p.userTag, stake: ticketPrice, profit, newBalance: updated.balance, winner: false });
                     }
                 }
 
@@ -252,7 +252,7 @@ module.exports = {
                     .setTitle(':tada: Lottery Draw')
                     .setDescription(`Winner: <@${winnerId}>`)
                     .setFields({ name: 'Payout', value: `:moneybag: **${formatBalance(pool)}**`, inline: true })
-                    .setColor(Colors.GREEN)
+                    .setColor(Colors.CORE)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
 
@@ -274,7 +274,7 @@ module.exports = {
                             .setTimestamp()
                             .setFooter({ text: 'Gamble Bot' });
 
-                        await interaction.follwUp({ embeds: [dm], flags: MessageFlags.Ephemeral });
+                        await r.interaction.follwUp({ embeds: [dm], flags: MessageFlags.Ephemeral });
                     } catch {
                         // Ignore
                     }
