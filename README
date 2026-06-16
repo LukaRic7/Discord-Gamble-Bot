@@ -2,11 +2,11 @@
 |Game|Return to Player|House Edge|Certainty|Stake|Other|
 |----|----------------|----------|---------|-----|-----|
 |Highlow|130.00%|-30.00%|Somewhat|50-250|
+|War|130.00%|-30.00%|Somewhat|250-750 (Increments: 50)|
 |Dice|115.90%|-15.90%|Absolute|100-500|
 |Crash|107.50%|-7.50%|Somewhat|100-500|
 |Slots|107.00%|-7.00%|Absolute|50-150|
 |Coinflip|100.00%|0.00%|Absolute|5-500|
-|War|100.00%|0.00%|Absolute|100-500|
 |Plinko|98.44%|+1.56%|Absolute|200-1000|
 |Blackjack|97.25%|+2.75%|Moderate|100-1000|
 |Mines|94.50%|+5.50%|Moderate|100-1000|Num Mines = 5-14|

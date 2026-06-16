@@ -5,9 +5,9 @@ const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteract
 
 const GRID_SIZE = 5;
 const CELL_COUNT = GRID_SIZE * GRID_SIZE;
-const SHOT_PRICE = 1;
-const MIN_SHOTS = 4;
-const MAX_SHOTS = 20;
+const SHOT_PRICE = 50;
+const MIN_SHOTS = 5;
+const MAX_SHOTS = 15;
 const TIME_LIMIT_MS = 3*60*1000;
 
 const SHIPS = [
@@ -16,8 +16,31 @@ const SHIPS = [
     { name: 'Destroyer', length: 2 }
 ];
 
-function randInt(max) { return Math.floor(Math.random() * max); }
+/**
+ * Returns a random integer from 0 to max - 1.
+ * Used for random placement of ships on the grid.
+ *
+ * @param {number} max - Upper bound (exclusive).
+ * @returns {number} Random integer between 0 and max - 1.
+ */
+function randInt(max) {
+    return Math.floor(Math.random() * max);
+}
 
+/**
+ * Randomly places all ships defined in SHIPS on the grid
+ * without overlapping and without exceeding grid boundaries.
+ *
+ * Each ship is placed either horizontally or vertically.
+ * The function retries placement up to 1000 times per ship.
+ *
+ * @returns {Array<Object>} Array of ship objects:
+ *  - name: ship name
+ *  - length: ship size
+ *  - coords: array of board indices occupied
+ *  - hits: number of hits taken
+ *  - sunk: whether the ship is sunk
+ */
 function placeShips() {
     // returns array of ship objects with coords (indices)
     const occupied = new Set();
@@ -58,6 +81,14 @@ function placeShips() {
     return placed;
 }
 
+/**
+ * Builds a 5x5 grid of Discord button components representing the game board.
+ *
+ * @param {Array<Object>} ships - Active ship objects with coordinates
+ * @param {boolean[]} revealed - Array tracking revealed cells
+ * @param {boolean} gameOver - Whether the game has ended (reveals all)
+ * @returns {ActionRowBuilder[]} Array of Discord action rows (grid UI)
+ */
 function generateBoardComponents(ships, revealed, gameOver) {
     const rows = [];
     for (let r = 0; r < GRID_SIZE; r++) {
@@ -102,6 +133,7 @@ function generateBoardComponents(ships, revealed, gameOver) {
 }
 
 module.exports = {
+    // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('war')
         .setDescription('Play a battleship-style game.')
@@ -112,8 +144,12 @@ module.exports = {
             .setMinValue(MIN_SHOTS)
             .setMaxValue(MAX_SHOTS)
         )
-        .setContexts(InteractionContextType.BotDM, InteractionContextType.PrivateChannel),
-
+        .setContexts(
+            InteractionContextType.BotDM,
+            InteractionContextType.PrivateChannel
+        ),
+        
+    // Callback for when the command is executed
     async execute(interaction) {
         const shots = interaction.options.getNumber('shots');
         const stake = shots * SHOT_PRICE;
@@ -131,13 +167,14 @@ module.exports = {
             const revealed = Array(CELL_COUNT).fill(false);
             let shotsLeft = shots;
             let totalPayout = 0; // gross win amount
-            const shipPayouts = {}; // map name -> payout (gross)
+            const shipPayouts = {}; // name -> payout (gross)
 
-            // Define payouts as multipliers of stake (tuned for approx RTP)
-            shipPayouts['Carrier'] = stake * 3.0;
+            // Define payouts as multipliers of stake
+            shipPayouts['Carrier'] = stake * 3.5;
             shipPayouts['Cruiser'] = stake * 1.5;
-            shipPayouts['Destroyer'] = stake * 0.8;
+            shipPayouts['Destroyer'] = stake * 1;
 
+            // Helper to build ship status fields
             const buildShipFields = () => {
                 const shipFields = [];
                 for (const s of ships) {
@@ -146,6 +183,7 @@ module.exports = {
                 return shipFields;
             }
 
+            // Build the initial embed
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setTitle(':crossed_swords: War In Progress')
@@ -164,6 +202,7 @@ module.exports = {
 
             const collector = response.createMessageComponentCollector({ componentType: ComponentType.Button, time: TIME_LIMIT_MS });
 
+            // Listen for when the user shoots
             collector.on('collect', async (i) => {
                 if (i.user.id !== userId) return i.reply({ embeds: [createIlligalInteractionEmbed()], flags: MessageFlags.Ephemeral });
 
@@ -207,34 +246,36 @@ module.exports = {
                 }
             });
 
+            // Called when the game ends (user used all shots or timed out)
             collector.on('end', async (_, reason) => {
                 // Determine final ships sunk and shots fired
                 const shipsSunk = ships.filter(s => s.sunk).length;
                 const shotsFired = shots - shotsLeft;
 
                 // Record game play
-                const updatedProfile = await db.getUser(userId); //await db.recordGamePlay(userId, stake, totalPayout);
+                const updatedProfile = await db.recordGamePlay(userId, stake, totalPayout);
                 await db.setWarStats(userId, shipsSunk, shotsFired);
 
-                // Build final embed
                 const profit = totalPayout - stake;
                 const title = ':crossed_swords: War Results';
-                const description = profit >= 0 ? ':trophy: You made a profit, good spoils of war!' : ':x: You did not spoils this war.';
+                const description = profit >= 0 ? ':trophy: You made a profit, good spoils of war!' : ':x: You did not get any spoils this war.';
                 const color = profit >= 0 ? Colors.GREEN : Colors.RED;
-
+                
+                // Build final embed
                 embed.setTitle(title)
                     .setDescription(description)
                     .setColor(color)
                     .setFields(
                         { name: 'Stake', value: formatBalance(stake), inline: true },
                         { name: 'Profit', value: formatBalance(profit, true), inline: true },
-                        { name: ':ship: Ships Sunk', value: `${shipsSunk}`, inline: true },
+                        { name: 'Ships Sunk', value: `:ship: ${shipsSunk}`, inline: true },
                         { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                     )
                     .setTimestamp();
 
                 const finalComponents = generateBoardComponents(ships, revealed, true);
 
+                // If the user didn't shoot all bullets in time
                 if (reason === 'time') {
                     // User timed out - show timed out embed then reveal board
                     const timeoutEmbed = createTimedOutEmbed(interaction);
