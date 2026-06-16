@@ -68,7 +68,7 @@ module.exports = { // RTP = 98.44%
             .setName('stake')
             .setDescription('Amount to bet.')
             .setRequired(true)
-            .setMinValue(200)
+            .setMinValue(150)
             .setMaxValue(1000)
         )
         .setContexts(
