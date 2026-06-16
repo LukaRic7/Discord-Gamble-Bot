@@ -11,7 +11,7 @@ const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require(
  * @param {number} spread Higher = more extreme rare rolls
  * @returns {number} Random hourly rate
  */
-function rollRandomHourlyRate(mean = 40, spread = 0.7) {
+function rollRandomHourlyRate(mean=80, spread=0.7) {
     // Box-Muller normal distribution
     const u = Math.random();
     const v = Math.random();
