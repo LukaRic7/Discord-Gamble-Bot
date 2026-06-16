@@ -24,16 +24,20 @@ module.exports = {
         const userId = interaction.user.id;
 
         try {
-            const leaderboard = await db.getLeaderboard();
+            const rawLeaderboard = await db.getLeaderboard();
+            const leaderboardLength = leaderboard.length;
+            const leaderboard = rawLeaderboard.sort((a, b) => b.balance - a.balance).slice(0, 10);
 
             const ownPlace = leaderboard.findIndex(user => user.userId === userId);
 
             const rankEmojis = { 0: ':first_place:', 1: ':second_place:', 2: ':third_place:' };
 
+            // Fetch each person in the leaderboard discord user object
             const users = await Promise.all(
                 leaderboard.map(entry => interaction.client.users.fetch(entry.userId).catch(() => null))
             );
 
+            // Build the fields
             const fields = leaderboard.map((entry, index) => {
                 const user = users[index];
 
@@ -51,7 +55,7 @@ module.exports = {
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(
                     ownPlace !== -1
-                        ? `You are in place **#${thousandSeperator.format(ownPlace + 1)}** of **${thousandSeperator.format(leaderboard.length)}**`
+                        ? `You are in place **#${thousandSeperator.format(ownPlace + 1)}** of **${thousandSeperator.format(leaderboardLength)}**`
                         : 'You do not have a gambling account.'
                 )
                 .setFields(fields)
