@@ -111,7 +111,7 @@ function generateBoardComponents(ships, revealed, gameOver) {
                     style = ButtonStyle.Primary;
                 } else if ((!ship && revealed[idx]) || gameOver) {
                     emoji = '🌊';
-                    style = ButtonStyle.Secondary;
+                    style = revealed[idx] ? ButtonStyle.Secondary : ButtonStyle.Danger;
                 } else {
                     emoji = '❓';
                     style = ButtonStyle.Secondary;
