@@ -25,7 +25,7 @@ module.exports = {
 
         try {
             const rawLeaderboard = await db.getLeaderboard();
-            const leaderboardLength = leaderboard.length;
+            const leaderboardLength = rawLeaderboard.length;
             const leaderboard = rawLeaderboard.sort((a, b) => b.balance - a.balance).slice(0, 10);
 
             const ownPlace = leaderboard.findIndex(user => user.userId === userId);
