@@ -11,7 +11,7 @@ const { createInsufficientMoneyEmbed, createIlligalInteractionEmbed } = require(
  * @param {number} spread Higher = more extreme rare rolls
  * @returns {number} Random hourly rate
  */
-function rollRandomHourlyRate(mean=80, spread=0.7) { // Originally mean=40
+function rollRandomHourlyRate(mean=40, spread=0.7) {
     // Box-Muller normal distribution
     const u = Math.random();
     const v = Math.random();
@@ -124,7 +124,7 @@ module.exports = {
                 if (i.customId === 'rollnew') {
                     // Ensure the user has enough money
                     const profile = await db.ensureUser(userId);
-                    if (profile.balance < 10) {
+                    if (profile.balance < 1000) {
                         return await i.reply({
                             embeds: [await createInsufficientMoneyEmbed(interaction, 1000)],
                             flags: MessageFlags.Ephemeral
