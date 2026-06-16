@@ -7,13 +7,13 @@ module.exports = {
     // Contains the slash command instance
     data: new SlashCommandBuilder()
         .setName('pay')
-        .setDescription('Pay another user a sum of money.')
+        .setDescription('Pay another user a sum of money. A 5% fee will be applied!')
         .addNumberOption((option) => option
             .setName('amount')
             .setDescription('Amount to pay.')
             .setRequired(true)
             .setMinValue(5)
-            .setMaxValue(100000)
+            .setMaxValue(10000)
         )
         .addMentionableOption((option) => option
             .setName('recipient')
@@ -49,14 +49,17 @@ module.exports = {
                 return await interaction.reply({ embeds: [createUserDoesNotExistEmbed(recipient.id)] });
             }
 
-            const newProfiles = await db.transferMoney(senderId, recipient.id, amount);
+            const fee = amount * 0.05;
+
+            const newProfiles = await db.transferMoney(senderId, recipient.id, amount - fee);
 
             // Build the embed
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setTitle(`:money_with_wings: You Transfered Money!`)
                 .setFields(
-                    { name: 'Amount', value: formatBalance(amount), inline: true },
+                    { name: 'Amount', value: formatBalance(amount - fee), inline: true },
+                    { name: 'Fee (5%)', value: formatBalance(fee), inline: true },
                     { name: `${interaction.user.globalName || interaction.user.username}'s Balance`, value: `:moneybag: **${formatBalance(newProfiles[0].balance)}**`, inline: false },
                     { name: `${recipient.globalName || recipient.username}'s Balance`, value: `:moneybag: **${formatBalance(newProfiles[1].balance)}**`, inline: false }
                 )
