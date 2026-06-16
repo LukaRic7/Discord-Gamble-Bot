@@ -38,16 +38,20 @@ module.exports = {
                 const user = users[index];
 
                 const name = user ? (user.globalName || user.username) : 'Unknown User';
-                const emoji = rankEmojis[index] ? `${rankEmojis[index]} #${index + 1}` : `#${index + 1} `;
+                const emoji = rankEmojis[index] || `#${index + 1}`;
 
-                return { name: `${emoji}${name}`, value: `**${formatBalance(entry.balance)}**`, inline: false };
+                return {
+                    name: `${emoji} - ${name}`,
+                    value: `:moneybag: **${formatBalance(entry.balance)}**`,
+                    inline: false
+                };
             });
 
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
                 .setDescription(
                     ownPlace !== -1
-                        ? `You are in place **#${thousandSeperator.format(ownPlace + 1)}**`
+                        ? `You are in **#${thousandSeperator.format(ownPlace + 1)}** place.`
                         : 'You do not have a gambling account.'
                 )
                 .setFields(fields)
