@@ -11,9 +11,9 @@ const MAX_SHOTS = 20;
 const TIME_LIMIT_MS = 3 * 60 * 1000; // 3 minutes
 
 const SHIPS = [
-    { name: 'Carrier', length: 5 },
-    { name: 'Cruiser', length: 3 },
-    { name: 'Destroyer', length: 2 }
+    { name: 'Carrier', length: 5, emoji: '🚢' },
+    { name: 'Cruiser', length: 3, emoji: '🛥️' },
+    { name: 'Destroyer', length: 2, emoji: '🚤' }
 ];
 
 function randInt(max) { return Math.floor(Math.random() * max); }
@@ -50,7 +50,7 @@ function placeShips() {
 
             // place
             for (const idx of coords) occupied.add(idx);
-            placed.push({ name: def.name, length: def.length, coords, hits: 0, sunk: false });
+            placed.push({ name: def.name, length: def.length, coords, hits: 0, sunk: false, emoji: def.emoji });
             break;
         }
     }
@@ -68,22 +68,21 @@ function generateBoardComponents(ships, revealed, gameOver) {
             let emoji = '❓';
             let style = ButtonStyle.Secondary;
             let disabled = false;
+            const ship = ships.find(s => s.coords.includes(idx));
 
             if (isRevealed) {
                 disabled = true;
-                const ship = ships.find(s => s.coords.includes(idx));
-                if (ship && revealed[idx]) {
-                    emoji = '💥';
+                if (revealed[idx]) {
+                    emoji = ship ? ship.emoji : '🌊';
                     style = ButtonStyle.Danger;
-                } else if (ship && !revealed[idx]) {
-                    emoji = '🚢';
-                    style = ButtonStyle.Primary;
-                } else if (!ship && revealed[idx]) {
-                    emoji = '🌊';
-                    style = ButtonStyle.Secondary;
-                } else {
-                    emoji = '❓';
-                    style = ButtonStyle.Secondary;
+                } else if (gameOver) {
+                    if (ship) {
+                        emoji = ship.emoji;
+                        style = ButtonStyle.Primary;
+                    } else {
+                        emoji = '🌊';
+                        style = ButtonStyle.Secondary;
+                    }
                 }
             }
 
@@ -205,7 +204,7 @@ module.exports = {
                 const shotsFired = shots - shotsLeft;
 
                 // Record game play
-                const updatedProfile = await db.getUser(userId); //await db.recordGamePlay(userId, stake, totalPayout);
+                const updatedProfile = await db.recordGamePlay(userId, stake, totalPayout);
                 await db.setWarStats(userId, shipsSunk, shotsFired);
 
                 // Build final embed
@@ -230,8 +229,7 @@ module.exports = {
                 if (reason === 'time') {
                     // User timed out - show timed out embed then reveal board
                     const timeoutEmbed = createTimedOutEmbed(interaction);
-                    timeoutEmbed.setDescription(':hourglass: Time expired — remaining shots are lost.');
-                    timeoutEmbed.setAuthor(buildAuthor(interaction));
+                    timeoutEmbed.setDescription(':hourglass: The enemy left - remaining shots are lost.');
                     await interaction.editReply({ embeds: [timeoutEmbed], components: finalComponents }).catch(console.error);
 
                     // Follow up with results after a short delay
