@@ -136,9 +136,8 @@ class DatabaseManager {
 
             CREATE TABLE IF NOT EXISTS game_war (
                 user_id            VARCHAR (25) PRIMARY KEY,
-                kings_pulled       INT          DEFAULT 0,
-                current_win_streak INT          DEFAULT 0,
-                longest_win_streak INT          DEFAULT 0,
+                ships_sunk         INT          DEFAULT 0,
+                shots_fired        INT          DEFAULT 0,
                 FOREIGN KEY (user_id)
                     REFERENCES player_profiles (user_id)
                     ON DELETE CASCADE
@@ -489,7 +488,7 @@ class DatabaseManager {
                 s.jackpots_hit AS slots_jackpots_hit, s.longest_win_streak AS slots_longest_win_streak,
                 pl.total_edge_hits AS plinko_total_edge_hits,
                 r.races_won AS race_races_won, r.longest_win_streak AS race_longest_win_streak,
-                w.kings_pulled AS war_kings_pulled, w.longest_win_streak AS war_longest_win_streak,
+                w.ships_sunk AS war_ships_sunk, w.shots_fired AS war_shots_fired,
                 l.times_won AS lottery_times_won,
                 d.longest_win_streak AS dice_longest_win_streak
             FROM player_profiles p
@@ -834,31 +833,30 @@ class DatabaseManager {
         await this.ensureUser(userId);
 
         await this.db.run(`
-            INSERT INTO game_war (user_id, kings_pulled, current_win_streak, longest_win_streak)
-            VALUES (?, 0, 0, 0)
+            INSERT INTO game_war (user_id, ships_sunk, shots_fired)
+            VALUES (?, 0, 0)
             ON CONFLICT(user_id) DO NOTHING
         `, [userId]);
-
+    
         return await this.db.get(`SELECT * FROM game_war WHERE user_id = ?`, [userId]);
     }
 
     /**
-     * Updates the user's war statistics (kings pulled and streaks).
+     * Updates the user's war statistics.
      * @param {string} userId - The Discord user ID.
-     * @param {number} addPulledKing - Number of kings pulled to add (usually 0 or 1).
-     * @param {number} newStreak - The user's current win streak for war.
+     * @param {number} shipsSunk - Number of ships sunk this round.
+     * @param {number} shotsFired - Number of shots fired this round.
      * @returns {Promise<void>}
      */
-    async setWarStats(userId, addPulledKing, newStreak) {
+    async setWarStats(userId, shipsSunk, shotsFired) {
         await this.db.run(`
-            INSERT INTO game_war (user_id, kings_pulled, current_win_streak, longest_win_streak)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO game_war (user_id, ships_sunk, shots_fired)
+            VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE
             SET
-                kings_pulled = kings_pulled + EXCLUDED.kings_pulled,
-                current_win_streak = EXCLUDED.current_win_streak,
-                longest_win_streak = MAX(game_war.longest_win_streak, EXCLUDED.longest_win_streak)
-        `, [userId, addPulledKing, newStreak, newStreak]);
+                ships_sunk = ships_sunk + EXCLUDED.ships_sunk,
+                shots_fired = shots_fired + EXCLUDED.shots_fired
+        `, [userId, shipsSunk, shotsFired]);
     }
 
     // ==========================================
