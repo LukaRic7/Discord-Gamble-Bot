@@ -6,8 +6,8 @@ const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteract
 const GRID_SIZE = 5;
 const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 const SHOT_PRICE = 50;
-const MIN_SHOTS = 5;
-const MAX_SHOTS = 15;
+const MIN_SHOTS = 3;
+const MAX_SHOTS = 10;
 const TIME_LIMIT_MS = 3*60*1000;
 
 const SHIPS = [
@@ -170,9 +170,9 @@ module.exports = {
             const shipPayouts = {}; // name -> payout (gross)
 
             // Define payouts as multipliers of stake
-            shipPayouts['Carrier'] = stake * 3.5;
-            shipPayouts['Cruiser'] = stake * 1.5;
-            shipPayouts['Destroyer'] = stake * 1;
+            shipPayouts['Carrier'] = stake * 1.1;
+            shipPayouts['Cruiser'] = stake * 0.4;
+            shipPayouts['Destroyer'] = stake * 0.6;
 
             // Helper to build ship status fields
             const buildShipFields = () => {
@@ -241,7 +241,7 @@ module.exports = {
                 await i.update({ embeds: [embed], components }).catch(console.error);
 
                 // End early if no shots left
-                if (shotsLeft <= 0) {
+                if (shotsLeft <= 0 || ships.every(s => s.sunk)) {
                     collector.stop('finished');
                 }
             });
