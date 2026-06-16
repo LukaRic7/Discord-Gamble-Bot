@@ -104,8 +104,14 @@ function generateBoardComponents(ships, revealed, gameOver) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('war')
-        .setDescription('Play a timed battleship-style game. Each shot costs $50.')
-        .addNumberOption(opt => opt.setName('shots').setDescription('Number of shots to buy.').setRequired(true).setMinValue(MIN_SHOTS).setMaxValue(MAX_SHOTS))
+        .setDescription('Play a battleship-style game.')
+        .addNumberOption((option) => option
+            .setName('shots')
+            .setDescription('Number of shots to buy. Each shot costs $50.')
+            .setRequired(true)
+            .setMinValue(MIN_SHOTS)
+            .setMaxValue(MAX_SHOTS)
+        )
         .setContexts(InteractionContextType.BotDM, InteractionContextType.PrivateChannel),
 
     async execute(interaction) {
@@ -134,8 +140,8 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setAuthor(buildAuthor(interaction))
-                .setTitle(':crossed_swords: War — In Progress')
-                .setDescription(`You have 3 minutes to sink the enemy ships. <t:${Math.floor(Date.now()/1000 + TIME_LIMIT_MS/1000)}:R>`)
+                .setTitle(':crossed_swords: War In Progress')
+                .setDescription(`Enemy ships leave <t:${Math.floor(Date.now()/1000 + TIME_LIMIT_MS/1000)}:R>. Sink them before then!`)
                 .addFields(
                     { name: 'Shots Left', value: `:gun: ${shotsLeft}`, inline: true },
                     { name: 'Ships', value: ships.map(s => `> ${s.sunk ? ':x:' : ':white_check_mark:'} **${s.name}**`).join('\n'), inline: true },
@@ -199,7 +205,7 @@ module.exports = {
                 const shotsFired = shots - shotsLeft;
 
                 // Record game play
-                const updatedProfile = await db.recordGamePlay(userId, stake, totalPayout);
+                const updatedProfile = await db.getUser(userId); //await db.recordGamePlay(userId, stake, totalPayout);
                 await db.setWarStats(userId, shipsSunk, shotsFired);
 
                 // Build final embed
