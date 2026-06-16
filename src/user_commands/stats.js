@@ -113,7 +113,7 @@ module.exports = {
                     },
                     {
                         name: ':crossed_swords: War',
-                        value: buildField(`Kings Pulled: ${thousandSeperator.format(stats.war_kings_pulled || 0)}`, `Best Streak: ${stats.war_longest_win_streak || 0}`),
+                        value: buildField(`Shots Fired ${thousandSeperator.format(stats.war_shots_fired || 0)}`, `Ships Sunk: ${stats.war_ships_sunk || 0}`),
                         inline: true
                     },
                     { name: '\u200B', value: '\u200B', inline: true }, // Spacer
