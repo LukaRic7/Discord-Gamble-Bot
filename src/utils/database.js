@@ -180,6 +180,21 @@ class DatabaseManager {
     // ==========================================
 
     /**
+     * Retrieves all users sorted by balance from highest to lowest.
+     * @returns {Promise<Array<Object>>} Array of objects in the format:
+     * [{ userId: string, balance: number }, ...]
+     */
+    async getLeaderboard() {
+        const rows = await this.db.all(`
+            SELECT user_id, balance
+            FROM player_profiles
+            ORDER BY balance DESC
+        `);
+    
+        return rows.map(row => ({ userId: row.user_id, balance: this.normalizeMoney(row.balance) }));
+    }
+
+    /**
      * Retrieves a user profile row by Discord user ID.
      * @param {string} userId - The Discord user ID.
      * @returns {Promise<Object|null>} The profile row, or null if none exists.
