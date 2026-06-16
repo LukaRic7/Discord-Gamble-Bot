@@ -64,25 +64,24 @@ function generateBoardComponents(ships, revealed, gameOver) {
         const row = new ActionRowBuilder();
         for (let c = 0; c < GRID_SIZE; c++) {
             const idx = r * GRID_SIZE + c;
-            const isRevealed = revealed[idx] || gameOver;
+            const wasShot = revealed[idx];
+            const ship = ships.find(s => s.coords.includes(idx));
             let emoji = '❓';
             let style = ButtonStyle.Secondary;
             let disabled = false;
-            const ship = ships.find(s => s.coords.includes(idx));
 
-            if (isRevealed) {
+            if (wasShot) {
                 disabled = true;
-                if (revealed[idx]) {
-                    emoji = ship ? ship.emoji : '🌊';
-                    style = ButtonStyle.Danger;
-                } else if (gameOver) {
-                    if (ship) {
-                        emoji = ship.emoji;
-                        style = ButtonStyle.Primary;
-                    } else {
-                        emoji = '🌊';
-                        style = ButtonStyle.Secondary;
-                    }
+                emoji = ship ? ship.emoji : '🌊';
+                style = ButtonStyle.Danger;
+            } else if (gameOver) {
+                disabled = true;
+                if (ship) {
+                    emoji = ship.emoji;
+                    style = ButtonStyle.Primary;
+                } else {
+                    emoji = '🌊';
+                    style = ButtonStyle.Secondary;
                 }
             }
 
