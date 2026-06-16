@@ -5,7 +5,7 @@ const { createInsufficientMoneyEmbed, createTimedOutEmbed, createIlligalInteract
 
 const GRID_SIZE = 5;
 const CELL_COUNT = GRID_SIZE * GRID_SIZE;
-const SHOT_PRICE = 50;
+const SHOT_PRICE = 1;
 const MIN_SHOTS = 4;
 const MAX_SHOTS = 20;
 const TIME_LIMIT_MS = 3 * 60 * 1000; // 3 minutes
