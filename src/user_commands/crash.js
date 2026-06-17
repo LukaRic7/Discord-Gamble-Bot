@@ -155,7 +155,7 @@ module.exports = {
 
                 if (gameOver) break;
 
-                if (Math.random() > 0.9) {
+                if (Math.random() > 0.88) {
                     collector.stop('busted');
                     break;
                 } else {
