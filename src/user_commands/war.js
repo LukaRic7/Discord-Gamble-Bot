@@ -170,9 +170,9 @@ module.exports = {
             const shipPayouts = {}; // name -> payout (gross)
 
             // Define payouts as multipliers of stake
-            shipPayouts['Carrier'] = stake * 1.1;
-            shipPayouts['Cruiser'] = stake * 0.4;
-            shipPayouts['Destroyer'] = stake * 0.6;
+            shipPayouts['Carrier'] = 500;
+            shipPayouts['Cruiser'] = 300;
+            shipPayouts['Destroyer'] = 200;
 
             // Helper to build ship status fields
             const buildShipFields = () => {
