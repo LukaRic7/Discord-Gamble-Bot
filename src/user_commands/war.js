@@ -258,16 +258,19 @@ module.exports = {
 
                 const profit = totalPayout - stake;
                 const title = ':crossed_swords: War Results';
-                const description = profit >= 0 ? ':trophy: You made a profit, good spoils of war!' : ':x: You did not get any spoils this war.';
+                const description = profit >= 0
+                    ? (profit === 0 ? ':scales: You earn or lose money this war.' : ':trophy: You made a profit, good spoils of war!') 
+                    : ':x: You did not get any spoils this war.';
                 const color = profit >= 0 ? Colors.GREEN : Colors.RED;
-                
+                const profitString = profit === 0 ? '$0.00' : formatBalance(profit, true)
+
                 // Build final embed
                 embed.setTitle(title)
                     .setDescription(description)
                     .setColor(color)
                     .setFields(
                         { name: 'Stake', value: formatBalance(stake), inline: true },
-                        { name: 'Profit', value: formatBalance(profit, true), inline: true },
+                        { name: 'Profit', value: profitString, inline: true },
                         { name: 'Ships Sunk', value: `:ship: ${shipsSunk}`, inline: true },
                         { name: 'New Balance', value: `:moneybag: **${formatBalance(updatedProfile.balance)}**`, inline: false }
                     )
