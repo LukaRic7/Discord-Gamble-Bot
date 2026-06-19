@@ -30,7 +30,7 @@ module.exports = {
     // Callback for when the command is executed
     async execute(interaction) {
         const db = interaction.client.db;
-        const ticketPrice = Math.floor(interaction.options.getNumber('ticket_price'));
+        const ticketPrice = interaction.options.getNumber('ticket_price');
         const intermission = Math.floor(interaction.options.getNumber('intermission_duration'));
 
         // participants: Map userId -> { userTag }

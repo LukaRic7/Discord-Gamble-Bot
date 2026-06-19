@@ -12,3 +12,6 @@
 |Mines|94.50%|+5.50%|Moderate|100-1000|Num Mines = 5-14|
 |Race|90.00%|+10.00%|Somewhat|100, 200, 300, 400, 500|Intermission = 10-300s
 |Chests|90.00%|+10.00%|Absolute|250-750|
+
+-- Fix pay, it doesnt send full, it sends full minus the fee
+-- Fix lottery not accepting decimals

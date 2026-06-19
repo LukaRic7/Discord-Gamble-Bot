@@ -444,7 +444,7 @@ class DatabaseManager {
      * @param {number} amount - The amount to transfer.
      * @returns {Promise<Array<Object>>} The updated sender and recipient profiles.
      */
-    async transferMoney(senderId, recipientId, amount) {
+    async transferMoney(senderId, recipientId, amount, fee) {
         await this.ensureUser(senderId);
         await this.ensureUser(recipientId);
 
@@ -465,7 +465,7 @@ class DatabaseManager {
                 balance = balance + ?,
                 total_received = total_received + ?
             WHERE user_id = ?
-        `, [amount, amount, recipientId]);
+        `, [amount - fee, amount - fee, recipientId]);
 
         return [await this.getUser(senderId), await this.getUser(recipientId)];
     }

@@ -51,7 +51,7 @@ module.exports = {
 
             const fee = amount * 0.05;
 
-            const newProfiles = await db.transferMoney(senderId, recipient.id, amount - fee);
+            const newProfiles = await db.transferMoney(senderId, recipient.id, amount, fee);
 
             // Build the embed
             const embed = new EmbedBuilder()
