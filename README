@@ -1,17 +1,6 @@
-# Game Fairness & Parameters
-|Game|Return to Player|House Edge|Certainty|Stake|Other|
-|----|----------------|----------|---------|-----|-----|
-|Highlow|130.00%|-30.00%|Somewhat|50-250|
-|War|100.00%|0.00%|Somewhat|150-500 (Increments: 50)|
-|Dice|115.90%|-15.90%|Absolute|100-500|
-|Crash|107.50%|-7.50%|Somewhat|100-500|
-|Slots|107.00%|-7.00%|Absolute|50-150|
-|Coinflip|100.00%|0.00%|Absolute|5-500|
-|Plinko|98.44%|+1.56%|Absolute|200-1000|
-|Blackjack|97.25%|+2.75%|Moderate|100-1000|
-|Mines|94.50%|+5.50%|Moderate|100-1000|Num Mines = 5-14|
-|Race|90.00%|+10.00%|Somewhat|100, 200, 300, 400, 500|Intermission = 10-300s
-|Chests|90.00%|+10.00%|Absolute|250-750|
+# Discord Gamble Bot
 
--- Fix pay, it doesnt send full, it sends full minus the fee
--- Fix lottery not accepting decimals
+A gamble bot with various games that can be deployed on a Discord bot account and played.
+
+Supports slash commands, aswell as fully rich embeds for when playing a game.
+Uses action row buttons for ingame plays.
