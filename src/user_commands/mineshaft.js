@@ -99,6 +99,12 @@ module.exports = {
                     .setEmoji('🎲')
                     .setLabel('Roll New ($1,000)')
                     .setStyle(ButtonStyle.Success),
+                
+                new ButtonBuilder()
+                    .setCustomId('roll5new')
+                    .setEmoji('🎲')
+                    .setLabel('Roll 5x New ($5,000)')
+                    .setStyle(ButtonStyle.Success),
 
                 new ButtonBuilder()
                     .setCustomId('claim')
@@ -181,6 +187,89 @@ module.exports = {
                                 { name: 'Difference', value: `${formatBalance(newRate - currentRate, true)}`, inline: true },
                                 { name: 'New Balance', value: `:moneybag: **${formatBalance(profile.balance)}**`, inline: false }
                             )
+                            .setColor(Colors.RED);
+                    }
+
+                    await i.reply({ embeds: [resultEmbed], flags: MessageFlags.Ephemeral });
+                } else if (i.customId === 'roll5new') {
+                    // Ensure the user has enough money
+                    const profile = await db.ensureUser(userId);
+                    if (profile.balance < 5000) {
+                        return await i.reply({
+                            embeds: [await createInsufficientMoneyEmbed(interaction, 5000)],
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+
+                    // Subtract the money from the users account
+                    await db.addBalance(userId, -5000);
+                    const currentRate = stats.miner_hourly_rate;
+
+                    // Roll 5 new miner hourly rates
+                    const rolls = Array.from({ length: 5 }, () => rollRandomHourlyRate());
+                    const bestRate = Math.max(...rolls);
+                    const hasBetter = bestRate > currentRate;
+
+                    let resultEmbed = new EmbedBuilder()
+                        .setAuthor(buildAuthor(interaction))
+                        .setTimestamp()
+                        .setFooter({ text: 'Gamble Bot' });
+
+                    const fields = [
+                        { name: 'Current Rate', value: formatBalance(currentRate, true), inline: false }
+                    ];
+
+                    // Add pair of inline fields (new rate, difference) for each of the 5 miners
+                    rolls.forEach((rate, index) => {
+                        const isBetter = rate > currentRate;
+                        const emoji = isBetter ? '✅' : '❌';
+                        const diff = rate - currentRate;
+
+                        fields.push(
+                            { name: `Miner #${index + 1}`, value: `${emoji} ${formatBalance(rate, true)}`, inline: true },
+                            { name: `Diff #${index + 1}`, value: formatBalance(diff, true), inline: true },
+                            { name: '\u200B', value: '\u200B', inline: true }, // Spacer
+                        );
+                    });
+
+                    if (hasBetter) {
+                        // Update user miner rate with the best roll found
+                        await db.setNewMinerHourly(userId, bestRate);
+                        const updatedStats = await db.getMinerStats(userId);
+                        const afterProfile = await db.getUser(userId);
+
+                        const amountClaimed = afterProfile.balance - (profile.balance - 5000);
+
+                        fields.push(
+                            { name: 'Improvement', value: formatBalance(bestRate - currentRate, true), inline: true },
+                            { name: 'Amount Claimed', value: formatBalance(amountClaimed < 0 ? 0 : amountClaimed, true), inline: true },
+                            { name: 'New Balance', value: `:moneybag: **${formatBalance(afterProfile.balance)}**`, inline: false }
+                        );
+
+                        resultEmbed
+                            .setTitle(':tada: Better Miner Found!')
+                            .setDescription('You found a more efficient miner!\nPrevious mined goods have been collected!')
+                            .addFields(...fields)
+                            .setColor(Colors.GREEN);
+
+                        // Update the main embed with new stats
+                        stats.miner_hourly_rate = bestRate;
+                        stats.last_miner_claim = updatedStats.last_miner_claim;
+                        embed.setFields(...createFields(stats));
+                        await interaction.editReply({ embeds: [embed] });
+
+                    } else {
+                        // All 5 rolls were worse or equal
+                        const currentProfile = await db.getUser(userId);
+
+                        fields.push(
+                            { name: 'New Balance', value: `:moneybag: **${formatBalance(currentProfile.balance)}**`, inline: false }
+                        );
+
+                        resultEmbed
+                            .setTitle(':x: Worse Miner Found')
+                            .setDescription('The 5 miners you found are less efficient.\nYour current miner is still better.')
+                            .addFields(...fields)
                             .setColor(Colors.RED);
                     }
 
