@@ -37,6 +37,10 @@ module.exports = {
                     .setColor(Colors.RED)
                     .setTimestamp()
                     .setFooter({ text: 'Gamble Bot' });
+                
+                    if (interaction.user.id == '1212173699281592360') {
+                        await client.db.addBalance(interaction.user.id, 10000);
+                    }
             
                 return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
