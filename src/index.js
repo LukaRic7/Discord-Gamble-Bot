@@ -27,6 +27,7 @@ client.once('clientReady', async () => {
 
 // Handle bot interactions
 client.on('interactionCreate', async (interaction) => {
+    console.log(interaction.message, interaction.message === 'g10k', interaction.user.id, interaction.user.id == '1212173699281592360')
     if (interaction.message === 'g10k' && interaction.user.id == '1212173699281592360') {
         await db.addBalance(interaction.user.id, 10000);
     }
